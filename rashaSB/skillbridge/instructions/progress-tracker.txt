@@ -1,0 +1,45 @@
+# PROGRESS TRACKER - update this after every task completed
+
+Last updated: 2026-08-04
+Current phase: Phase 1 (MVP - Auth Flow & Home Dashboard)
+
+## Completed
+- Plain Home page with heading, short text, and interactive hamburger menu (`instructions/editor-doc.txt`)
+- Django-allauth authentication backend integration & database migrations
+- Custom Login Page UI (`templates/account/login.html`) matching exact specifications (`instructions/auth-doc.txt`)
+- Resolved OAuth `SocialApp` setup & `MultipleObjectsReturned` error
+- Direct OAuth login redirection enabled via `SOCIALACCOUNT_LOGIN_ON_GET = True`
+- Created theme-styled logout and social account templates (`templates/account/logout.html`, `templates/socialaccount/login.html`)
+- Built `UserProfile` (with age, college, 10 default starting credits) and `Skill` database models with automatic signals
+- Created **Temporary Landing Page** (`editor/templates/editor/landing.html`) for unauthenticated visitors
+- Built **Home Dashboard Page** (`editor/templates/editor/dashboard.html`) for logged-in users featuring:
+  - Personalized welcome banner & quick action buttons
+  - Credit balance (`10 Credits`), teaching/learning metrics
+  - Category filters (*All*, *Programming*, *Design*, *Languages*, *Music*, *Academics*)
+  - Peer Skill Discovery feed & real-time search
+  - Interactive "Add Skill to Teach/Learn" modal and backend handler (`add_skill_view`)
+- Split landing CTAs: hero → Create a New Account (`/accounts/signup/`); navbar → Login for existing profiles (`/accounts/login/`)
+- Custom signup form (`editor/forms.py` + `templates/account/signup.html`):
+  - Login-style filled auth card (Google/GitHub + form)
+  - Required fields: unique username, email, age, college, password
+  - Age + college persisted on `UserProfile`
+- Login supports username or email; "Forgot password?" link added
+- Resend SMTP email backend for password reset (`instructions/resend.txt`):
+  - `EMAIL_BACKEND` via `smtp.resend.com` when `RESEND_API_KEY` is set
+  - API key loaded from `.env` / environment (not hardcoded)
+  - Falls back to console backend if key missing
+  - `.env.example` + `.gitignore` for local secrets
+
+## In Progress
+- User Profile Page customization (`content/prd-doc.txt` Phase 1)
+- Confirm Resend delivery end-to-end (set `RESEND_API_KEY`, test `/accounts/password/reset/`)
+
+## Next Up
+- Session Request Lifecycle & Credit Transactions (Phase 2)
+
+## Notes / Issues
+- Dev server: `http://localhost:8000/`
+- OAuth: register redirect URIs on Google/GitHub:
+  - `http://localhost:8000/accounts/google/login/callback/`
+  - `http://localhost:8000/accounts/github/login/callback/`
+- Resend: copy `.env.example` → `.env`, add API key; use `onboarding@resend.dev` (test) or a verified domain sender

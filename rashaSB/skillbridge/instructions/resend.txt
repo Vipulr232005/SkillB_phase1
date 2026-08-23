@@ -1,0 +1,38 @@
+TASK: Setup forgot password email using Resend (replace console email backend)
+
+Steps:
+
+1. Create a Resend account at resend.com, verify a sending domain (or use their test domain for dev)
+
+2. Get your API key from Resend dashboard > API Keys
+
+3. Install nothing extra - Resend supports plain SMTP, so Django's built-in email backend works
+
+4. settings.py - replace the console email backend with this:
+   EMAIL_BACKEND = django.core.mail.backends.smtp.EmailBackend
+   EMAIL_HOST = smtp.resend.com
+   EMAIL_PORT = 587
+   EMAIL_USE_TLS = True
+   EMAIL_HOST_USER = resend
+   EMAIL_HOST_PASSWORD = <your Resend API key>
+   DEFAULT_FROM_EMAIL = onboarding@yourdomain.com
+
+   Note: EMAIL_HOST_USER is literally the word "resend", not your email address.
+   DEFAULT_FROM_EMAIL must use a domain verified in Resend (or their test sender if using test mode).
+
+5. Store the API key as an environment variable, not hardcoded:
+   EMAIL_HOST_PASSWORD = os.environ.get(RESEND_API_KEY)
+
+6. No changes needed to allauth - forgot password flow already calls Django's email system,
+   it will now send through Resend instead of printing to console.
+
+7. Test:
+   - Go to /accounts/password/reset/
+   - Enter your email
+   - Check inbox for the reset link (check spam folder too if using test domain)
+   - Click link, set new password, confirm login works with new password
+
+8. If email doesn't arrive:
+   - Check Resend dashboard > Logs for delivery status/errors
+   - Confirm DEFAULT_FROM_EMAIL domain matches a verified domain in Resend
+   - Confirm EMAIL_HOST_PASSWORD is the correct API key, not expired/revoked@

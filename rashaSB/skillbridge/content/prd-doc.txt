@@ -1,0 +1,114 @@
+# Skill Bridge — Product Requirements Document (PRD)
+
+## 1. Overview
+Skill Bridge is a peer-to-peer skill exchange platform where students teach skills to earn credits and spend credits to learn from others. AI matches users, generates session summaries, and improves personalization over time.
+
+## 2. Problem Statement
+Students have valuable skills but no easy way to trade them. Existing platforms are one-directional (instructor → student), costly, and don't personalize who you learn from. Skill Bridge fixes this with a credit-based peer exchange plus AI matching.
+
+## 3. Target Users
+- College students wanting to learn a skill without paying
+- College students willing to teach a skill they already know
+- Single user type: everyone is both a potential teacher and learner
+
+## 4. Goals
+- Let users list skills they can teach and want to learn
+- Match users to suitable partners
+- Let sessions happen (schedule + meet link)
+- Track credits fairly (teach = earn, learn = spend)
+- Build trust via ratings
+- Reduce manual effort with AI (matching + summaries)
+
+## 5. Non-Goals (out of scope for now)
+- Custom-built video calling (use Google Meet links instead)
+- Payment gateway for paid sessions
+- Mobile app
+- Multi-language support
+
+## 6. Features & Requirements
+
+### 6.1 Authentication & Profile
+- User can sign up / log in
+- Profile: name, college, department, bio, photo (optional)
+- User can add skills they can teach (with proficiency level)
+- User can add skills they want to learn
+
+**Acceptance criteria:** A user can create a profile and see it saved with at least one teach-skill and one learn-skill.
+
+### 6.2 Skill Discovery
+- Users can browse/search all skills
+- Users can filter by skill category
+- Users can view another user's profile (skills, rating, bio)
+
+**Acceptance criteria:** Searching "Python" returns all users who listed Python as a teach-skill.
+
+### 6.3 Session Request & Scheduling
+- User can request a session with another user for a specific skill
+- Requested user can accept/reject
+- Accepted sessions get a date/time and an auto-generated Google Meet link
+- Session status: requested → accepted/rejected → completed/cancelled
+
+**Acceptance criteria:** A full session can go from request to completed status with a working Meet link.
+
+### 6.4 Credit System
+- New users start with a base credit amount (e.g. 10)
+- Completing a session as teacher: earn credits
+- Completing a session as learner: spend credits
+- User can view credit balance and transaction history
+
+**Acceptance criteria:** After a completed session, teacher's balance increases and learner's balance decreases by the agreed amount, and both are logged.
+
+### 6.5 Ratings & Reviews
+- After a completed session, both users rate each other (1–5) with optional comment
+- Average rating shown on profile
+
+**Acceptance criteria:** Rating a user updates their visible average rating.
+
+### 6.6 AI Matching
+- System recommends learning partners based on skill overlap, rating, and availability
+- Phase 3a: rule-based scoring
+- Phase 3b (optional): embedding-based similarity for fuzzy skill matches
+
+**Acceptance criteria:** Dashboard shows a ranked "Recommended for you" list, not just a manual search result.
+
+### 6.7 AI Session Summary
+- After a session, AI generates a summary from session notes: topics covered, key concepts, suggested next topics
+
+**Acceptance criteria:** A completed session with notes produces a readable AI-generated summary saved to that session.
+
+### 6.8 Notifications
+- In-app notification for: session request, accept/reject, upcoming session reminder
+
+**Acceptance criteria:** User sees a notification when another user requests a session.
+
+### 6.9 Admin Panel
+- Admin can view/manage users, sessions, skills, and disputes (Django admin default is enough for MVP)
+
+## 7. User Flow (happy path)
+1. Sign up → build profile → add teach/learn skills
+2. Browse or check AI recommendations
+3. Request a session → get accepted → session scheduled with Meet link
+4. Attend session
+5. Mark session complete → credits move → both rate each other
+6. AI generates summary → visible in session history
+
+## 8. Success Metrics (for report/demo purposes)
+- # of profiles created
+- # of sessions completed
+- Average rating across platform
+- Credit circulation (total earned = total spent, sanity check)
+- Match acceptance rate (% of AI-recommended sessions accepted)
+
+## 9. Release Plan (maps to tech spec phases)
+| Release | Features |
+|---|---|
+| MVP (Phase 1) | Auth, profile, skill listing, manual browse |
+| v1.1 (Phase 2) | Credits, session lifecycle, scheduling |
+| v1.2 (Phase 3) | AI matching |
+| v1.3 (Phase 4) | Chat, Meet integration, AI summaries, notifications |
+| v1.4 (Phase 5) | UI polish, admin refinement |
+
+## 10. Open Questions
+- Starting credit amount for new users — fixed, or earned via onboarding task?
+- Minimum session length before it counts as "completed" (prevents credit abuse)
+- What happens to credits if a session is cancelled after acceptance?

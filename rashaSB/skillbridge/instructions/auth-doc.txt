@@ -1,0 +1,26 @@
+TASK: Custom login page UI (override default allauth template)
+
+Layout (matches reference image):
+- Centered card, white background, rounded corners, soft shadow
+- Title: "Sign in to Skill Bridge" (bold, large)
+- Subtitle: "Welcome back! Please sign in to continue" (muted gray/teal-mid)
+- Two buttons side by side: "Google" and "GitHub", white bg, border, icon + label, equal width
+- Divider line with "or" centered in the middle
+- Label: "Email address"
+- Input field: full width, placeholder "Enter your email address"
+- Primary button: full width, dark bg, text "Continue" with arrow icon on right
+- Footer text below card, separated by a thin line: "Don't have an account? Sign up" (Sign up as a link)
+
+Styling (use existing design system):
+- Colors: teal-deep, teal-mid, amber (accent), cream (background)
+- Fonts: Fraunces for the title, Space Grotesk for everything else
+- Card: max-width ~400px, centered on page, cream/light background behind it
+- Button hover: subtle scale or shadow increase, no jarring animation
+
+File to edit: templates/account/login.html (this overrides allauth's default login page)
+
+Notes:
+- Google/GitHub buttons link to /accounts/google/login/ and /accounts/github/login/ (already working from previous setup)
+- Email field + Continue button submits to allauth's normal login form
+- Do not add "Secured by Clerk" or any third-party branding - this is our own auth system
+- Keep it to this single page, no extra sections

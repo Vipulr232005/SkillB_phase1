@@ -1,0 +1,9 @@
+Backend: Django (Python)
+Database: PostgreSQL
+Frontend (MVP): Django Templates + HTML/CSS/JS
+Frontend (later): React (optional, post-MVP)
+Realtime chat: Django Channels + WebSockets
+Video calls: Google Meet link generation (no custom video)
+AI matching: weighted scoring first, embeddings + cosine similarity later
+AI summaries: OpenAI/Anthropic API on session notes
+Hosting: Render / Railway

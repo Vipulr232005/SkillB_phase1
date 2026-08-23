@@ -1,0 +1,1149 @@
+<!-- ==========================================================================
+   Skill Bridge - Peer-to-Peer Student Coding Platform (Butter Yellow Theme)
+   Django Ready: Compatible with standard browsers AND Django template engine!
+   ========================================================================== -->
+<!-- DJANGO TIP FOR BACKEND: Uncomment the line below when pasting into Django templates/ directory -->
+<!-- {% load static %} -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skill Bridge | Peer-to-Peer Student Coding & Earning Platform</title>
+    <meta name="description"
+        content="Skill Bridge - Learn coding interactively with student peers, collaborate on real-time code projects, and earn money by mentoring and solving doubt bounties.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- CSS Stylesheet (Django static tag: {% static 'css/styles.css' %}) -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <i class="fa-solid fa-code-compare"></i>
+                    </div>
+                    <span class="brand-name">Skill<span>Bridge</span></span>
+                </div>
+                <button class="icon-btn close-sidebar" id="closeSidebarBtn" title="Close Menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-view="dashboard">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#peers" class="nav-item" data-view="peers">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Peer Mentors</span>
+                    <span class="nav-badge">12 Online</span>
+                </a>
+                <a href="#studio" class="nav-item" data-view="studio">
+                    <i class="fa-solid fa-laptop-code"></i>
+                    <span>Live Code Studio</span>
+                    <span class="live-dot"></span>
+                </a>
+                <a href="#earnings" class="nav-item" data-view="earnings">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span>Earnings & Bounties</span>
+                </a>
+                <a href="#forum" class="nav-item" data-view="forum">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Doubt Forum</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-mini-card">
+                    <!-- DJANGO USER AVATAR: {{ request.user.profile.avatar.url|default:'...' }} -->
+                    <img src="avathar/c1.jpg"
+                        alt="User Profile" class="mini-avatar">
+                    <div class="user-info">
+                        <!-- DJANGO USERNAME: {{ request.user.get_full_name|default:'Raveena P V' }} -->
+                        <span class="user-name">Raveena P V</span>
+                        <span class="user-role">Student Mentor • Lv. 4</span>
+                    </div>
+                </div>
+                <!-- DJANGO LOGOUT LINK: href="{% url 'logout' %}" -->
+                <button class="logout-btn" id="logoutBtn" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Sidebar Overlay for mobile -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header Bar -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="menu-toggle-btn" id="menuToggleBtn" title="Toggle Navigation">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="page-title-group">
+                        <h1 id="pageTitle">Dashboard</h1>
+                        <span class="page-subtitle">Welcome back, Raveena! Connect and learn with peers today.</span>
+                    </div>
+                </div>
+
+                <div class="header-center">
+                    <div class="search-bar">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="globalSearchInput"
+                            placeholder="Search mentors, skills (React, Python, DSA), or topics...">
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <button class="quick-action-btn" id="quickSessionBtn">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Start Session</span>
+                    </button>
+
+                    <div class="notifications-dropdown-container">
+                        <button class="icon-btn" id="notifBtn" title="Notifications">
+                            <i class="fa-solid fa-bell"></i>
+                            <span class="notification-badge">3</span>
+                        </button>
+                        <div class="notif-dropdown" id="notifDropdown">
+                            <div class="notif-header">
+                                <h3>Notifications</h3>
+                                <span class="mark-read">Mark all as read</span>
+                            </div>
+                            <div class="notif-list">
+                                <div class="notif-item unread">
+                                    <div class="notif-icon green"><i class="fa-solid fa-check-circle"></i></div>
+                                    <div class="notif-content">
+                                        <p><strong>Alex Rivera</strong> accepted your peer code review request!</p>
+                                        <span class="notif-time">5 mins ago</span>
+                                    </div>
+                                </div>
+                                <div class="notif-item unread">
+                                    <div class="notif-icon gold"><i class="fa-solid fa-coins"></i></div>
+                                    <div class="notif-content">
+                                        <p>You earned <strong>$25.00</strong> for resolving Python Recursion doubt
+                                            bounty.</p>
+                                        <span class="notif-time">1 hour ago</span>
+                                    </div>
+                                </div>
+                                <div class="notif-item">
+                                    <div class="notif-icon blue"><i class="fa-solid fa-calendar"></i></div>
+                                    <div class="notif-content">
+                                        <p>Upcoming session: <strong>React State Management</strong> at 6:00 PM.</p>
+                                        <span class="notif-time">3 hours ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-dropdown-container">
+                        <div class="profile-pill" id="profilePill" role="button" aria-haspopup="true"
+                            aria-expanded="false" tabindex="0" title="Click to view profile & settings">
+                            <img src="avathar/c1.jpg"
+                                alt="Raveena P V" class="profile-img" id="headerProfileImg">
+                            <span class="profile-name" id="headerProfileName">Raveena</span>
+                            <i class="fa-solid fa-chevron-down profile-arrow-icon" id="profileArrowIcon"></i>
+                        </div>
+
+                        <!-- User Profile Dropdown Menu -->
+                        <div class="user-profile-dropdown" id="userProfileDropdown">
+                            <!-- User Mini Header -->
+                            <div class="dropdown-user-header">
+                                <img src="avathar/c1.jpg"
+                                    alt="Raveena P V" class="dropdown-avatar" id="dropdownAvatarImg">
+                                <div class="dropdown-user-info">
+                                    <h4 id="dropdownUserName">Raveena P V</h4>
+                                    <span class="dropdown-user-role" id="dropdownUserRole">Student Mentor • Lv. 4</span>
+                                    <span class="public-profile-badge" id="dropdownPublicBadge"
+                                        title="Visible publicly to all Skill Bridge peers">
+                                        <i class="fa-solid fa-globe"></i> Public Profile
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Public Profile Items Grid -->
+                            <div class="dropdown-public-info-section">
+                                <div class="section-header-flex">
+                                    <span class="section-title">Public Profile Details</span>
+                                    <button class="view-public-btn" id="dropdownViewPublicBtn"
+                                        title="Preview public view of your profile">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Preview Public
+                                    </button>
+                                </div>
+
+                                <div class="profile-details-grid">
+                                    <!-- 1. Skills -->
+                                    <div class="detail-card-item" id="itemSkills">
+                                        <div class="item-icon yellow"><i class="fa-solid fa-code"></i></div>
+                                        <div class="item-content">
+                                            <span class="item-label">Skills:</span>
+                                            <div class="tags-container" id="dropdownSkillsList">
+                                                <span class="p-tag yellow">React</span>
+                                                <span class="p-tag yellow">JavaScript</span>
+                                                <span class="p-tag yellow">Python</span>
+                                                <span class="p-tag yellow">UI/UX</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. To know -->
+                                    <div class="detail-card-item" id="itemToKnow">
+                                        <div class="item-icon purple"><i class="fa-solid fa-lightbulb"></i></div>
+                                        <div class="item-content">
+                                            <span class="item-label">To know:</span>
+                                            <div class="tags-container" id="dropdownToKnowList">
+                                                <span class="p-tag outline-purple">Docker</span>
+                                                <span class="p-tag outline-purple">GraphQL</span>
+                                                <span class="p-tag outline-purple">System Design</span>
+                                                <span class="p-tag outline-purple">Rust</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 3. Points gained -->
+                                    <div class="detail-card-item" id="itemPoints">
+                                        <div class="item-icon gold"><i class="fa-solid fa-trophy"></i></div>
+                                        <div class="item-content">
+                                            <span class="item-label">Points gained:</span>
+                                            <span class="item-stat-value gold-text" id="dropdownPointsValue">
+                                                1,450 pts <span class="stat-sub">($240.00 earned)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 4. Available hours -->
+                                    <div class="detail-card-item" id="itemHours">
+                                        <div class="item-icon green"><i class="fa-solid fa-clock"></i></div>
+                                        <div class="item-content">
+                                            <span class="item-label">Available hours:</span>
+                                            <span class="item-stat-value green-text" id="dropdownHoursValue">
+                                                15 hrs / week <span class="stat-sub">(Mon-Fri 4-8 PM)</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="dropdown-divider"></div>
+
+                            <!-- Settings Dropdown Accordion/Submenu -->
+                            <div class="dropdown-settings-accordion">
+                                <div class="settings-trigger-btn" id="settingsTriggerBtn">
+                                    <div class="trigger-label flex-gap">
+                                        <i class="fa-solid fa-gear gear-icon"></i>
+                                        <span>Settings</span>
+                                    </div>
+                                    <i class="fa-solid fa-chevron-down trigger-chevron" id="settingsChevron"></i>
+                                </div>
+
+                                <div class="settings-sub-menu" id="settingsSubMenu">
+                                    <button class="settings-sub-item" id="btnEditProfile">
+                                        <i class="fa-solid fa-user-pen"></i>
+                                        <div class="sub-text">
+                                            <span class="title">Edit Profile</span>
+                                            <span class="desc">Update skills, hours & info</span>
+                                        </div>
+                                    </button>
+
+                                    <button class="settings-sub-item" id="btnAccountPrivacy">
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                        <div class="sub-text">
+                                            <span class="title">Account and Privacy</span>
+                                            <span class="desc">Visibility, password & alerts</span>
+                                        </div>
+                                    </button>
+
+                                    <button class="settings-sub-item danger-sub-item" id="btnLogout">
+                                        <i class="fa-solid fa-right-from-bracket"></i>
+                                        <div class="sub-text">
+                                            <span class="title">Logout</span>
+                                            <span class="desc">Sign out of your account</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- VIEW 1: DASHBOARD (Butter Yellow Theme Figma Post-Login View) -->
+            <section class="view-section active" id="dashboardView">
+                <!-- Figma Signature Layout Row: Butter Yellow Shape Left & Peer Cards Carousel/Grid -->
+                <div class="figma-hero-container">
+                    <!-- Curved Decorative Butter Yellow Blob Element matching Figma -->
+                    <div class="teal-curved-shape">
+                        <div class="teal-shape-content">
+                            <button class="shape-menu-icon" id="shapeMenuBtn">
+                                <i class="fa-solid fa-bars"></i>
+                            </button>
+                            <button class="shape-arrow-btn" id="shapeArrowBtn" title="Previous / Quick Action">
+                                <i class="fa-solid fa-caret-left"></i>
+                            </button>
+                            <div class="shape-text-overlay">
+                                <h2>Peer Mentorship</h2>
+                                <p>Learn together. Earn together.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Peer Student Cards Section -->
+                    <div class="peer-cards-carousel-wrapper">
+                        <div class="carousel-header">
+                            <h3>Available Peer Mentors & Partners</h3>
+                            <div class="carousel-controls">
+                                <button class="carousel-arrow" id="prevCardBtn"><i
+                                        class="fa-solid fa-chevron-left"></i></button>
+                                <button class="carousel-arrow" id="nextCardBtn"><i
+                                        class="fa-solid fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="peer-cards-grid" id="peerCardsGrid">
+                            <!-- Card 1 -->
+                            <div class="peer-card">
+                                <div class="card-avatar-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=250"
+                                        alt="Alex Rivera" class="card-avatar">
+                                    <span class="status-indicator online" title="Online"></span>
+                                </div>
+                                <h4 class="peer-name">Alex Rivera</h4>
+                                <span class="peer-skill-tag">Python & DSA</span>
+                                <div class="peer-rating">
+                                    <i class="fa-solid fa-star"></i>
+                                    <span>4.9 (42 reviews)</span>
+                                </div>
+                                <div class="peer-rate-badge">$15 / hr</div>
+                                <div class="card-actions">
+                                    <button class="card-btn primary connect-btn" data-peer="Alex Rivera"
+                                        data-role="Python & DSA">Connect</button>
+                                    <button class="card-btn secondary profile-modal-trigger"
+                                        data-peer-id="1">Profile</button>
+                                </div>
+                            </div>
+
+                            <!-- Card 2 -->
+                            <div class="peer-card">
+                                <div class="card-avatar-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=250"
+                                        alt="Sophia Chen" class="card-avatar">
+                                    <span class="status-indicator online" title="Online"></span>
+                                </div>
+                                <h4 class="peer-name">Sophia Chen</h4>
+                                <span class="peer-skill-tag">React & UI/UX</span>
+                                <div class="peer-rating">
+                                    <i class="fa-solid fa-star"></i>
+                                    <span>5.0 (68 reviews)</span>
+                                </div>
+                                <div class="peer-rate-badge">Free Swap</div>
+                                <div class="card-actions">
+                                    <button class="card-btn primary connect-btn" data-peer="Sophia Chen"
+                                        data-role="React & UI/UX">Connect</button>
+                                    <button class="card-btn secondary profile-modal-trigger"
+                                        data-peer-id="2">Profile</button>
+                                </div>
+                            </div>
+
+                            <!-- Card 3 -->
+                            <div class="peer-card">
+                                <div class="card-avatar-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=250"
+                                        alt="Marcus Vance" class="card-avatar">
+                                    <span class="status-indicator busy" title="In Session"></span>
+                                </div>
+                                <h4 class="peer-name">Marcus Vance</h4>
+                                <span class="peer-skill-tag">C++ & Algorithms</span>
+                                <div class="peer-rating">
+                                    <i class="fa-solid fa-star"></i>
+                                    <span>4.8 (31 reviews)</span>
+                                </div>
+                                <div class="peer-rate-badge">$12 / hr</div>
+                                <div class="card-actions">
+                                    <button class="card-btn primary connect-btn" data-peer="Marcus Vance"
+                                        data-role="C++ & Algorithms">Connect</button>
+                                    <button class="card-btn secondary profile-modal-trigger"
+                                        data-peer-id="3">Profile</button>
+                                </div>
+                            </div>
+
+                            <!-- Card 4 -->
+                            <div class="peer-card">
+                                <div class="card-avatar-wrapper">
+                                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=250"
+                                        alt="Priya Sharma" class="card-avatar">
+                                    <span class="status-indicator online" title="Online"></span>
+                                </div>
+                                <h4 class="peer-name">Priya Sharma</h4>
+                                <span class="peer-skill-tag">AI & Machine Learning</span>
+                                <div class="peer-rating">
+                                    <i class="fa-solid fa-star"></i>
+                                    <span>4.9 (55 reviews)</span>
+                                </div>
+                                <div class="peer-rate-badge">$18 / hr</div>
+                                <div class="card-actions">
+                                    <button class="card-btn primary connect-btn" data-peer="Priya Sharma"
+                                        data-role="AI & Machine Learning">Connect</button>
+                                    <button class="card-btn secondary profile-modal-trigger"
+                                        data-peer-id="4">Profile</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Overview Row -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon teal-bg">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-value">28.5 hrs</span>
+                            <span class="stat-label">Learning Time</span>
+                        </div>
+                        <span class="stat-trend positive"><i class="fa-solid fa-arrow-up"></i> 14%</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon emerald-bg">
+                            <i class="fa-solid fa-handshake"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-value">19 Sessions</span>
+                            <span class="stat-label">Peer Collaboration</span>
+                        </div>
+                        <span class="stat-trend positive"><i class="fa-solid fa-arrow-up"></i> 85%</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon gold-bg">
+                            <i class="fa-solid fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-value">$340.00</span>
+                            <span class="stat-label">Earnings Balance</span>
+                        </div>
+                        <span class="stat-trend positive"><i class="fa-solid fa-arrow-up"></i> +$65 this week</span>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon purple-bg">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <div class="stat-details">
+                            <span class="stat-value">1,450 XP</span>
+                            <span class="stat-label">Peer Rating Score</span>
+                        </div>
+                        <span class="stat-badge">Top 5% Student</span>
+                    </div>
+                </div>
+
+                <!-- Content Panels: Upcoming Sessions & High-Value Bounties -->
+                <div class="dashboard-panels-grid">
+                    <!-- Left Panel: Active / Scheduled Live Coding Sessions -->
+                    <div class="dashboard-panel">
+                        <div class="panel-header">
+                            <h3><i class="fa-solid fa-video"></i> Active & Upcoming Live Sessions</h3>
+                            <button class="text-link-btn switch-view-btn" data-target="studio">Go to Studio</button>
+                        </div>
+                        <div class="sessions-list">
+                            <div class="session-item active-session">
+                                <div class="session-status-badge live">LIVE NOW</div>
+                                <div class="session-info">
+                                    <h4>Full-Stack Project Code Review</h4>
+                                    <p>Pairing with <strong>Sophia Chen</strong> • HTML/CSS & React</p>
+                                </div>
+                                <button class="action-btn join-btn switch-view-btn" data-target="studio">
+                                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Join Studio
+                                </button>
+                            </div>
+
+                            <div class="session-item">
+                                <div class="session-time">Today, 7:30 PM</div>
+                                <div class="session-info">
+                                    <h4>Data Structures: Binary Trees & Graph Traversal</h4>
+                                    <p>Mentoring <strong>David Kim</strong> • C++</p>
+                                </div>
+                                <button class="action-btn outline-btn cancel-session-btn">Scheduled</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Student Doubt Bounties -->
+                    <div class="dashboard-panel">
+                        <div class="panel-header">
+                            <h3><i class="fa-solid fa-fire"></i> Open Code Doubt Bounties</h3>
+                            <button class="text-link-btn switch-view-btn" data-target="forum">View All</button>
+                        </div>
+                        <div class="bounties-list">
+                            <div class="bounty-item">
+                                <div class="bounty-reward">$30 Bounty</div>
+                                <div class="bounty-details">
+                                    <h4>Fix async/await race condition in Node.js backend API</h4>
+                                    <div class="bounty-tags">
+                                        <span class="tag">JavaScript</span>
+                                        <span class="tag">Node.js</span>
+                                        <span class="tag">Promises</span>
+                                    </div>
+                                </div>
+                                <button class="action-btn solve-btn switch-view-btn" data-target="studio"
+                                    data-code="async-bounty">Solve Now</button>
+                            </div>
+
+                            <div class="bounty-item">
+                                <div class="bounty-reward">$20 Bounty</div>
+                                <div class="bounty-details">
+                                    <h4>Optimize Python Pandas dataframe memory footprint</h4>
+                                    <div class="bounty-tags">
+                                        <span class="tag">Python</span>
+                                        <span class="tag">Pandas</span>
+                                    </div>
+                                </div>
+                                <button class="action-btn solve-btn switch-view-btn" data-target="studio"
+                                    data-code="pandas-bounty">Solve Now</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: PEER MENTORS DISCOVERY -->
+            <section class="view-section" id="peersView">
+                <div class="peers-filter-bar">
+                    <div class="filter-group">
+                        <label><i class="fa-solid fa-filter"></i> Topic / Language:</label>
+                        <select id="languageFilter" class="filter-select">
+                            <option value="all">All Skills</option>
+                            <option value="python">Python</option>
+                            <option value="react">React / JavaScript</option>
+                            <option value="cpp">C++ & Data Structures</option>
+                            <option value="ai">AI / Data Science</option>
+                            <option value="uiux">UI/UX & Figma</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Session Type:</label>
+                        <select id="priceFilter" class="filter-select">
+                            <option value="all">All Pricing Options</option>
+                            <option value="free">Free Peer Swap</option>
+                            <option value="under15">Under $15/hr</option>
+                            <option value="15plus">$15+/hr</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group search-flex">
+                        <input type="text" id="peerSearchInput" placeholder="Search by name, university, or keyword..."
+                            class="filter-input">
+                    </div>
+                </div>
+
+                <div class="full-peers-grid" id="fullPeersGrid">
+                    <!-- Dynamic rendering by app.js -->
+                </div>
+            </section>
+
+            <!-- VIEW 3: LIVE CODE STUDIO (Collaborative Editor & Peer Call) -->
+            <section class="view-section" id="studioView">
+                <div class="studio-container">
+                    <!-- Top Studio Header -->
+                    <div class="studio-header">
+                        <div class="studio-info">
+                            <span class="live-pill"><i class="fa-solid fa-circle"></i> Live Pair Session</span>
+                            <h2>Peer Studio: <span id="sessionTopicName">Python Async Doubt & Code Optimization</span>
+                            </h2>
+                        </div>
+                        <div class="studio-controls">
+                            <div class="lang-selector">
+                                <label for="codeLangSelect"><i class="fa-solid fa-code"></i> Language:</label>
+                                <select id="codeLangSelect">
+                                    <option value="python">Python 3.10</option>
+                                    <option value="javascript">JavaScript (ES6)</option>
+                                    <option value="cpp">C++ 20</option>
+                                    <option value="html">HTML / CSS</option>
+                                </select>
+                            </div>
+                            <button class="run-code-btn" id="runCodeBtn">
+                                <i class="fa-solid fa-play"></i> Run Code
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Studio Body: Split View -->
+                    <div class="studio-workspace">
+                        <!-- Left Panel: Interactive Code Editor & Output Console -->
+                        <div class="editor-pane">
+                            <div class="editor-tabs">
+                                <div class="tab active"><i class="fa-solid fa-file-code"></i> main.py</div>
+                                <div class="tab"><i class="fa-solid fa-gear"></i> config.json</div>
+                                <div class="editor-actions">
+                                    <button id="formatCodeBtn" title="Format Code"><i
+                                            class="fa-solid fa-wand-magic-sparkles"></i></button>
+                                    <button id="clearCodeBtn" title="Reset Code"><i
+                                            class="fa-solid fa-rotate-left"></i></button>
+                                </div>
+                            </div>
+
+                            <div class="code-editor-area">
+                                <textarea id="codeTextarea" spellcheck="false"># Skill Bridge Collaborative Peer Code Editor (Butter Yellow Theme)
+# Mentors & Students write code in real-time together!
+
+def calculate_peer_bounty(hours_spent, rating_multiplier):
+    base_rate = 25.0  # Dollars per hour
+    total_earned = hours_spent * base_rate * rating_multiplier
+    return round(total_earned, 2)
+
+# Student Doubt Test Case
+student_name = "Raveena"
+hours = 3.5
+rating = 1.2  # 5-Star Mentor bonus
+
+earnings = calculate_peer_bounty(hours, rating)
+print(f"🎉 Success! {student_name} earned ${earnings} on Skill Bridge!")
+
+# Try running this code using the 'Run Code' button above!
+</textarea>
+                            </div>
+
+                            <!-- Terminal / Output Console -->
+                            <div class="console-pane">
+                                <div class="console-header">
+                                    <span><i class="fa-solid fa-terminal"></i> Terminal Output</span>
+                                    <button id="clearConsoleBtn"><i class="fa-solid fa-trash-can"></i> Clear</button>
+                                </div>
+                                <div class="console-body" id="consoleOutput">
+                                    <div class="console-line system">> Skill Bridge Interactive Compiler environment
+                                        ready.</div>
+                                    <div class="console-line system">> Click 'Run Code' to execute your peer code.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Panel: Peer Video/Audio Call & Live Chat -->
+                        <div class="peer-call-pane">
+                            <div class="video-grid">
+                                <!-- Remote Peer Video -->
+                                <div class="video-box peer-box">
+                                    <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=400"
+                                        alt="Peer Avatar" class="video-placeholder-img">
+                                    <div class="video-name-tag">
+                                        <span>Alex Rivera (Peer Mentor)</span>
+                                        <i class="fa-solid fa-microphone mic-active"></i>
+                                    </div>
+                                    <div class="screen-share-badge"><i class="fa-solid fa-desktop"></i> Screen Active
+                                    </div>
+                                </div>
+
+                                <!-- User Video (Local) -->
+                                <div class="video-box user-box">
+                                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300"
+                                        alt="User Video" class="video-placeholder-img">
+                                    <div class="video-name-tag">
+                                        <span>You (Raveena)</span>
+                                        <i class="fa-solid fa-microphone mic-active"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Call Control Toolbar -->
+                            <div class="call-controls-bar">
+                                <button class="call-btn mic-btn active" id="micToggle" title="Mute/Unmute Mic">
+                                    <i class="fa-solid fa-microphone"></i>
+                                </button>
+                                <button class="call-btn cam-btn active" id="camToggle" title="Turn Camera On/Off">
+                                    <i class="fa-solid fa-video"></i>
+                                </button>
+                                <button class="call-btn share-btn" id="shareToggle" title="Share Screen">
+                                    <i class="fa-solid fa-desktop"></i>
+                                </button>
+                                <button class="call-btn end-call-btn" id="endCallBtn" title="End Call Session">
+                                    <i class="fa-solid fa-phone-slash"></i>
+                                </button>
+                            </div>
+
+                            <!-- Integrated Peer Chat -->
+                            <div class="peer-chat-box">
+                                <div class="chat-header">
+                                    <i class="fa-solid fa-comments"></i> Session Chat
+                                </div>
+                                <div class="chat-messages" id="chatMessages">
+                                    <div class="chat-msg peer">
+                                        <span class="msg-author">Alex Rivera</span>
+                                        <p>Hey Raveena! I'm reviewing line 4 of your code function now. Looking great!
+                                        </p>
+                                        <span class="msg-time">4:12 PM</span>
+                                    </div>
+                                    <div class="chat-msg user">
+                                        <span class="msg-author">You</span>
+                                        <p>Thanks Alex! Let's test running the function with sample arguments.</p>
+                                        <span class="msg-time">4:13 PM</span>
+                                    </div>
+                                </div>
+                                <div class="chat-input-row">
+                                    <input type="text" id="chatInput" placeholder="Type message or paste snippet...">
+                                    <button id="sendChatBtn"><i class="fa-solid fa-paper-plane"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 4: STUDENT EARNINGS & BOUNTIES -->
+            <section class="view-section" id="earningsView">
+                <div class="earnings-hero-card">
+                    <div class="hero-balance-info">
+                        <span class="balance-title">Available Payout Balance</span>
+                        <h1 class="balance-amount">$340.00</h1>
+                        <p class="balance-sub">Lifetime earnings on Skill Bridge: <strong>$1,280.00</strong></p>
+                    </div>
+                    <div class="hero-actions">
+                        <button class="action-btn primary-btn cashout-btn" id="cashoutBtn">
+                            <i class="fa-solid fa-building-columns"></i> Withdraw Funds
+                        </button>
+                        <button class="action-btn secondary-btn" id="viewHistoryBtn">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Transaction History
+                        </button>
+                    </div>
+                </div>
+
+                <div class="earnings-grid-layout">
+                    <!-- Left: Earnings Chart & Breakdown -->
+                    <div class="earnings-card">
+                        <h3><i class="fa-solid fa-chart-line"></i> Weekly Earnings Overview</h3>
+                        <div class="chart-bars-container">
+                            <div class="bar-col">
+                                <div class="bar" style="height: 45%;" data-val="$45"></div>
+                                <span class="bar-day">Mon</span>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar" style="height: 60%;" data-val="$60"></div>
+                                <span class="bar-day">Tue</span>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar" style="height: 85%;" data-val="$85"></div>
+                                <span class="bar-day">Wed</span>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar" style="height: 30%;" data-val="$30"></div>
+                                <span class="bar-day">Thu</span>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar highlight" style="height: 95%;" data-val="$95"></div>
+                                <span class="bar-day">Fri</span>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar" style="height: 70%;" data-val="$70"></div>
+                                <span class="bar-day">Sat</span>
+                            </div>
+                            <div class="bar-col">
+                                <div class="bar" style="height: 20%;" data-val="$20"></div>
+                                <span class="bar-day">Sun</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Completed Bounties & Peer Reviews -->
+                    <div class="earnings-card">
+                        <h3><i class="fa-solid fa-receipt"></i> Recent Completed Doubts</h3>
+                        <div class="recent-transactions">
+                            <div class="tx-item">
+                                <div class="tx-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                                <div class="tx-details">
+                                    <h4>Mentorship: C++ Memory Leak Fix</h4>
+                                    <span>Client: Marcus Vance • 1.5 hrs</span>
+                                </div>
+                                <div class="tx-amount">+$25.00</div>
+                            </div>
+
+                            <div class="tx-item">
+                                <div class="tx-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                                <div class="tx-details">
+                                    <h4>Doubt Bounty: React Redux Toolkit Setup</h4>
+                                    <span>Client: Priya Sharma</span>
+                                </div>
+                                <div class="tx-amount">+$35.00</div>
+                            </div>
+
+                            <div class="tx-item">
+                                <div class="tx-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                                <div class="tx-details">
+                                    <h4>Code Review: Flask REST API Architecture</h4>
+                                    <span>Client: David Kim</span>
+                                </div>
+                                <div class="tx-amount">+$20.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 5: DOUBT FORUM -->
+            <section class="view-section" id="forumView">
+                <div class="forum-header-bar">
+                    <h2><i class="fa-solid fa-comments"></i> Student Doubt & Bounty Forum</h2>
+                    <button class="action-btn primary-btn" id="postDoubtBtn">
+                        <i class="fa-solid fa-pen-to-square"></i> Post New Doubt ($ Bounty)
+                    </button>
+                </div>
+
+                <div class="forum-posts-container" id="forumPosts">
+                    <div class="forum-post-card">
+                        <div class="post-user-info">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150"
+                                alt="Avatar" class="post-avatar">
+                            <div>
+                                <h4>David Kim <span class="student-badge">CS Sophomore</span></h4>
+                                <span class="post-time">Posted 25 mins ago</span>
+                            </div>
+                            <div class="post-bounty-badge">$25 Bounty Offered</div>
+                        </div>
+                        <h3 class="post-title">How to resolve infinite loop re-render in React useEffect with object
+                            dependency?</h3>
+                        <p class="post-desc">I'm passing an object option directly into `useEffect` dependencies,
+                            causing React component to infinitely re-render. Can someone hop on a 15-min studio session
+                            to explain useMemo or useRef solution?</p>
+                        <div class="post-code-snippet">
+                            <code>useEffect(() => { fetchData(filterOptions); }, [filterOptions]); // Causes loop!</code>
+                        </div>
+                        <div class="post-footer">
+                            <span class="post-tag">React</span>
+                            <span class="post-tag">JavaScript</span>
+                            <span class="post-tag">Hooks</span>
+                            <button class="action-btn primary-btn accept-bounty-btn switch-view-btn"
+                                data-target="studio">
+                                <i class="fa-solid fa-handshake-angle"></i> Accept Bounty & Help David
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL: Peer Connect / Profile Details -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal-card">
+            <button class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-header-profile">
+                <img src="" alt="Peer Profile" class="modal-avatar" id="modalAvatar">
+                <div class="modal-profile-info">
+                    <h2 id="modalPeerName">Student Name</h2>
+                    <p id="modalPeerTagline">Topic & Expertise</p>
+                    <div class="modal-tags" id="modalTags">
+                        <span class="tag">Python</span>
+                        <span class="tag">Algorithms</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <h3>About Me</h3>
+                <p id="modalAboutText">Experienced student mentor passionate about peer coding, pair programming, and
+                    problem solving.</p>
+                <div class="modal-stats">
+                    <div class="m-stat">
+                        <span class="m-val" id="modalSessions">48</span>
+                        <span class="m-lbl">Sessions Completed</span>
+                    </div>
+                    <div class="m-stat">
+                        <span class="m-val" id="modalRating">4.9 ★</span>
+                        <span class="m-lbl">Rating</span>
+                    </div>
+                    <div class="m-stat">
+                        <span class="m-val" id="modalRate">$15/hr</span>
+                        <span class="m-lbl">Session Fee</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn secondary-btn" id="modalChatBtn"><i class="fa-solid fa-message"></i> Send
+                    Message</button>
+                <button class="action-btn primary-btn" id="modalBookBtn"><i class="fa-solid fa-calendar-check"></i> Book
+                    Live Session</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Edit Profile -->
+    <div class="modal-overlay" id="editProfileModal">
+        <div class="modal-card edit-profile-card">
+            <button class="modal-close" id="editProfileCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-card-header">
+                <h2><i class="fa-solid fa-user-pen"></i> Edit Profile</h2>
+                <p>Update your profile details visible to other Skill Bridge peers.</p>
+            </div>
+            <form id="editProfileForm" class="edit-profile-form">
+                <!-- Butter Yellow Cartoon Avatar Card (C1 - C6 Options from avathar folder) -->
+                <div class="form-group full-width">
+                    <label><i class="fa-solid fa-face-smile"></i> Choose Profile Avatar (C1 - C6 Options)</label>
+                    <div class="yellow-avatar-card">
+                        <div class="avatar-grid-6">
+                            <!-- C1 -->
+                            <div class="avatar-circle-option selected" data-avatar="avathar/c1.jpg" title="Avatar C1">
+                                <img src="avathar/c1.jpg" alt="C1 Avatar">
+                                <span class="avatar-code-badge">C1</span>
+                                <span class="avatar-check"><i class="fa-solid fa-check"></i></span>
+                            </div>
+                            <!-- C2 -->
+                            <div class="avatar-circle-option" data-avatar="avathar/c2.jpg" title="Avatar C2">
+                                <img src="avathar/c2.jpg" alt="C2 Avatar">
+                                <span class="avatar-code-badge">C2</span>
+                                <span class="avatar-check"><i class="fa-solid fa-check"></i></span>
+                            </div>
+                            <!-- C3 -->
+                            <div class="avatar-circle-option" data-avatar="avathar/c3.jpg" title="Avatar C3">
+                                <img src="avathar/c3.jpg" alt="C3 Avatar">
+                                <span class="avatar-code-badge">C3</span>
+                                <span class="avatar-check"><i class="fa-solid fa-check"></i></span>
+                            </div>
+                            <!-- C4 -->
+                            <div class="avatar-circle-option" data-avatar="avathar/c4.jpg" title="Avatar C4">
+                                <img src="avathar/c4.jpg" alt="C4 Avatar">
+                                <span class="avatar-code-badge">C4</span>
+                                <span class="avatar-check"><i class="fa-solid fa-check"></i></span>
+                            </div>
+                            <!-- C5 -->
+                            <div class="avatar-circle-option" data-avatar="avathar/c5.jpg" title="Avatar C5">
+                                <img src="avathar/c5.jpg" alt="C5 Avatar">
+                                <span class="avatar-code-badge">C5</span>
+                                <span class="avatar-check"><i class="fa-solid fa-check"></i></span>
+                            </div>
+                            <!-- C6 -->
+                            <div class="avatar-circle-option" data-avatar="avathar/c6.jpg" title="Avatar C6">
+                                <img src="avathar/c6.jpg" alt="C6 Avatar">
+                                <span class="avatar-code-badge">C6</span>
+                                <span class="avatar-check"><i class="fa-solid fa-check"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="editFullName">Full Name</label>
+                        <input type="text" id="editFullName" class="form-input" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="editSkills">Skills (comma separated)</label>
+                        <input type="text" id="editSkills" class="form-input"
+                            placeholder="e.g. React, JavaScript, Python, UI/UX" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="editToKnow">Skills to Know / Want to Learn (comma separated)</label>
+                        <input type="text" id="editToKnow" class="form-input"
+                            placeholder="e.g. Docker, GraphQL, System Design, Rust" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAvailableHours">Available Hours / Week</label>
+                        <input type="text" id="editAvailableHours" class="form-input" placeholder="e.g. 15 hrs / week"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSchedule">Weekly Schedule</label>
+                        <input type="text" id="editSchedule" class="form-input"
+                            placeholder="e.g. Mon - Fri, 4:00 PM - 8:00 PM">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="editBio">Bio / Public Tagline</label>
+                        <textarea id="editBio" class="form-textarea" rows="3"
+                            placeholder="Tell peers about your mentorship style..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="action-btn secondary-btn" id="cancelEditProfileBtn">Cancel</button>
+                    <button type="submit" class="action-btn primary-btn"><i class="fa-solid fa-floppy-disk"></i> Save
+                        Profile Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Account & Privacy -->
+    <div class="modal-overlay" id="accountPrivacyModal">
+        <div class="modal-card account-privacy-card">
+            <button class="modal-close" id="accountPrivacyCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-card-header">
+                <h2><i class="fa-solid fa-shield-halved"></i> Account and Privacy Settings</h2>
+                <p>Control who can view your profile details and manage your account security.</p>
+            </div>
+            <form id="accountPrivacyForm" class="privacy-form">
+                <div class="privacy-section">
+                    <h3><i class="fa-solid fa-eye"></i> Profile Visibility</h3>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <strong>Make Profile Publicly Visible</strong>
+                            <span>Allow other student peers to search, view your profile, and see your skills.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="togglePublicProfile" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <strong>Show Available Hours Publicly</strong>
+                            <span>Display your weekly free mentorship hours on your public card.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleShowHours" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <strong>Allow Direct Mentorship Requests</strong>
+                            <span>Peers can book 1-on-1 code review or doubt-solving sessions directly.</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleAllowRequests" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="privacy-section">
+                    <h3><i class="fa-solid fa-key"></i> Security & Password</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" class="form-input" placeholder="••••••••">
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" class="form-input" placeholder="••••••••">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="action-btn secondary-btn" id="cancelPrivacyBtn">Cancel</button>
+                    <button type="submit" class="action-btn primary-btn"><i class="fa-solid fa-check"></i> Save
+                        Settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Public Profile Preview -->
+    <div class="modal-overlay" id="publicProfileViewModal">
+        <div class="modal-card public-profile-preview-card">
+            <button class="modal-close" id="publicProfileCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+            <div class="public-card-banner">
+                <span class="public-badge-top"><i class="fa-solid fa-globe"></i> Public View</span>
+            </div>
+            <div class="public-card-profile-header">
+                <img src="avathar/c1.jpg"
+                    alt="Raveena P V" class="public-card-avatar" id="pubModalAvatar">
+                <div class="public-card-title-group">
+                    <h2 id="pubModalName">Raveena P V</h2>
+                    <p id="pubModalRole">Student Mentor • Lv. 4</p>
+                    <span class="online-status-badge"><i class="fa-solid fa-circle"></i> Online & Available</span>
+                </div>
+            </div>
+
+            <div class="public-card-body">
+                <div class="public-section-block">
+                    <h4>About & Mentorship Style</h4>
+                    <p id="pubModalBio">Experienced student mentor passionate about peer coding, pair programming, React
+                        UI/UX, and DSA problem solving.</p>
+                </div>
+
+                <!-- Featured 4 Public Attributes -->
+                <div class="public-attrs-grid">
+                    <div class="pub-attr-card yellow">
+                        <div class="attr-header">
+                            <i class="fa-solid fa-screwdriver-wrench"></i>
+                            <span>Skills</span>
+                        </div>
+                        <div class="attr-tags" id="pubModalSkills">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="pub-attr-card purple">
+                        <div class="attr-header">
+                            <i class="fa-solid fa-lightbulb"></i>
+                            <span>To Know</span>
+                        </div>
+                        <div class="attr-tags" id="pubModalToKnow">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="pub-attr-card gold">
+                        <div class="attr-header">
+                            <i class="fa-solid fa-trophy"></i>
+                            <span>Points Gained</span>
+                        </div>
+                        <div class="attr-val-box">
+                            <span class="big-val" id="pubModalPoints">1,450 pts</span>
+                            <span class="sub-val" id="pubModalEarned">$240.00 Total Earned</span>
+                        </div>
+                    </div>
+
+                    <div class="pub-attr-card green">
+                        <div class="attr-header">
+                            <i class="fa-solid fa-clock"></i>
+                            <span>Available Hours</span>
+                        </div>
+                        <div class="attr-val-box">
+                            <span class="big-val" id="pubModalHours">15 hrs / week</span>
+                            <span class="sub-val" id="pubModalSchedule">Mon-Fri 4:00 PM - 8:00 PM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer centered">
+                <button class="action-btn primary-btn" id="pubModalShareBtn"><i class="fa-solid fa-share-nodes"></i>
+                    Copy Public Profile Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Logout Confirmation -->
+    <div class="modal-overlay" id="logoutConfirmModal">
+        <div class="modal-card logout-card text-center">
+            <button class="modal-close" id="logoutCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+            <div class="logout-icon-wrapper">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </div>
+            <h2>Log Out of Skill Bridge?</h2>
+            <p>Are you sure you want to log out? You will need to sign in again to access your live sessions and peer
+                bounties.</p>
+            <div class="modal-footer centered">
+                <button class="action-btn secondary-btn" id="cancelLogoutBtn">Cancel</button>
+                <button class="action-btn danger-btn" id="confirmLogoutBtn"><i
+                        class="fa-solid fa-right-from-bracket"></i> Yes, Log Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- JS Script (Django static tag: {% static 'js/app.js' %}) -->
+    <script src="app.js"></script>
+</body>
+
+</html>

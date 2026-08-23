@@ -1,0 +1,11 @@
+TASK: Build a plain home page with a hamburger menu
+
+Home page:
+- Simple, clean layout
+- Just a heading and short text, no complex sections
+
+Hamburger menu:
+- Icon in top corner, opens/closes a side or dropdown menu
+- 2 buttons inside: Home, Profile
+
+Keep it minimal - no extra styling, sections, or features beyond this.
