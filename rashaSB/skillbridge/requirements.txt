@@ -1,0 +1,7 @@
+# Skill Bridge — Python dependencies
+# Python 3.10+
+
+Django>=6.0,<7
+django-allauth>=65.13,<66
+requests>=2.32,<3
+PyJWT[crypto]>=2.9,<3

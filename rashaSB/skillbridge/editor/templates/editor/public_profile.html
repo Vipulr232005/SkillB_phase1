@@ -1,0 +1,36 @@
+{% extends "editor/base_app.html" %}
+{% load static %}
+
+{% block title %}{{ peer.username }} | Skill Bridge{% endblock %}
+{% block page_title %}Profile{% endblock %}
+
+{% block content %}
+<section class="public-hero">
+    <img src="{% static peer_profile.avatar_static_path %}" alt="" class="public-avatar">
+    <div>
+        <h2>{{ peer.get_full_name|default:peer.username }}</h2>
+        <p>{{ peer_profile.college }} {% if peer_profile.department %}· {{ peer_profile.department }}{% endif %}</p>
+        <p>★ {{ peer_profile.stars_label }} · {{ peer_profile.credits }} credits</p>
+        {% if peer_profile.show_hours %}
+        <p>{{ peer_profile.available_hours }} · {{ peer_profile.schedule }}</p>
+        {% endif %}
+        <p>{{ peer_profile.bio|default:"No bio yet." }}</p>
+    </div>
+</section>
+
+<h3>Teaches</h3>
+<div class="peer-cards-grid">
+    {% for skill in teach_skills %}
+    <article class="peer-card">
+        <h4>{{ skill.name }}</h4>
+        <div class="peer-meta">{{ skill.category }} · {{ skill.proficiency }}</div>
+        {% if peer != request.user and peer_profile.allow_requests %}
+        <button type="button" class="btn-yellow js-request" data-skill-id="{{ skill.id }}"
+            data-label="{{ skill.name }} with {{ peer.username }}">Request session</button>
+        {% endif %}
+    </article>
+    {% empty %}
+    <p>No teach skills listed.</p>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "editor/base_app.html" %}
+
+{% block title %}Credits | Skill Bridge{% endblock %}
+{% block page_title %}Credits{% endblock %}
+
+{% block content %}
+<div class="stat-tile" style="max-width:280px;margin-bottom:1.5rem;">
+    <span>{{ profile.credits }}</span>
+    <small>Current balance</small>
+</div>
+<p>New accounts start with 10 credits. Completing a session moves 1 credit from learner to teacher.</p>
+
+<h3>Ledger</h3>
+{% for tx in ledger %}
+<div class="session-row">
+    <div>
+        <strong>{{ tx.kind }}</strong> {{ tx.amount }} credit{{ tx.amount|pluralize }}
+        · {{ tx.session.skill.name }}
+        <div class="peer-meta">{{ tx.created_at }}</div>
+    </div>
+</div>
+{% empty %}
+<p>No credit movements yet. Complete a session to see the ledger.</p>
+{% endfor %}
+{% endblock %}

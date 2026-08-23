@@ -75,6 +75,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "editor.context_processors.bridge_profile",
             ],
         },
     },
@@ -133,6 +134,9 @@ LOGIN_REDIRECT_URL = "/"
 ACCOUNT_LOGOUT_REDIRECT_URL = "/"
 ACCOUNT_LOGIN_METHODS = {"email", "username"}
 ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*"]
+# No confirmation email / OTP on signup. allauth would otherwise SMTP via Resend
+# (Resend test mode only allows sending to the account owner's inbox).
+ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_FORMS = {
     "signup": "editor.forms.SkillBridgeSignupForm",
 }
@@ -157,22 +161,34 @@ if RESEND_API_KEY:
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-# Provider Specific Settings
+# Provider apps: set GOOGLE_* / GITHUB_* in .env (not Django Admin SocialApp).
+# Redirect URIs on Google/GitHub:
+#   http://localhost:8000/accounts/google/login/callback/
+#   http://localhost:8000/accounts/github/login/callback/
+# If you open http://127.0.0.1:8000/, register that host too, or run:
+#   python manage.py runserver localhost:8000
+_google_id = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+_google_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+_github_id = os.environ.get("GITHUB_CLIENT_ID", "").strip()
+_github_secret = os.environ.get("GITHUB_CLIENT_SECRET", "").strip()
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
-        "SCOPE": [
-            "profile",
-            "email",
-        ],
-        "AUTH_PARAMS": {
-            "access_type": "online",
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+        "APP": {
+            "client_id": _google_id,
+            "secret": _google_secret,
+            "key": "",
         },
     },
     "github": {
-        "SCOPE": [
-            "user",
-            "user:email",
-        ],
+        "SCOPE": ["user", "user:email"],
+        "APP": {
+            "client_id": _github_id,
+            "secret": _github_secret,
+            "key": "",
+        },
     },
 }
 

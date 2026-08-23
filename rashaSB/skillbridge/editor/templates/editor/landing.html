@@ -1,247 +1,50 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkillBridge - Peer-to-Peer Skill Exchange</title>
-    <!-- Google Fonts: Fraunces & Space Grotesk -->
+    <title>Skill Bridge</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-    <style>
-        :root {
-            --teal-deep: #0b2e2b;
-            --teal-mid: #0d9488;
-            --amber: #d97706;
-            --cream: #fcfbf4;
-            --cream-surface: #ffffff;
-            --text-main: #1c2d2a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --font-display: 'Fraunces', serif;
-            --font-body: 'Space Grotesk', sans-serif;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--cream);
-            color: var(--text-main);
-            font-family: var(--font-body);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Navbar */
-        .navbar {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .brand-logo {
-            font-family: var(--font-display);
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--teal-deep);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .brand-logo span {
-            color: var(--amber);
-        }
-
-        .nav-link-btn {
-            background-color: var(--teal-deep);
-            color: #ffffff;
-            padding: 0.65rem 1.4rem;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-
-        .nav-link-btn:hover {
-            background-color: var(--teal-mid);
-            box-shadow: 0 4px 12px rgba(13, 148, 136, 0.25);
-            transform: translateY(-1px);
-        }
-
-        /* Hero Container */
-        .hero-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 4rem 1.5rem;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background-color: rgba(13, 148, 136, 0.1);
-            color: var(--teal-mid);
-            padding: 0.4rem 1rem;
-            border-radius: 50px;
-            font-size: 0.88rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-        }
-
-        .hero-title {
-            font-family: var(--font-display);
-            font-size: 3.5rem;
-            font-weight: 700;
-            color: var(--teal-deep);
-            line-height: 1.15;
-            margin-bottom: 1.25rem;
-        }
-
-        .hero-subtitle {
-            font-size: 1.25rem;
-            color: var(--text-muted);
-            line-height: 1.6;
-            margin-bottom: 2.25rem;
-            max-width: 620px;
-        }
-
-        .cta-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-            background-color: var(--teal-deep);
-            color: #ffffff;
-            padding: 0.95rem 2.25rem;
-            border-radius: 10px;
-            font-size: 1.05rem;
-            font-weight: 600;
-            text-decoration: none;
-            box-shadow: 0 6px 20px rgba(11, 46, 43, 0.15);
-            transition: all 0.25 ease;
-        }
-
-        .cta-btn:hover {
-            background-color: var(--teal-mid);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(13, 148, 136, 0.3);
-        }
-
-        /* Features Cards */
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 1.5rem;
-            width: 100%;
-            max-width: 1000px;
-            margin: 2rem auto 4rem auto;
-            padding: 0 1.5rem;
-        }
-
-        .feature-card {
-            background-color: var(--cream-surface);
-            border: 1px solid var(--border-color);
-            border-radius: 14px;
-            padding: 1.75rem;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
-            text-align: left;
-        }
-
-        .feature-icon {
-            font-size: 1.75rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .feature-title {
-            font-family: var(--font-display);
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--teal-deep);
-            margin-bottom: 0.4rem;
-        }
-
-        .feature-desc {
-            font-size: 0.92rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-
-        footer {
-            border-top: 1px solid var(--border-color);
-            padding: 1.5rem;
-            text-align: center;
-            font-size: 0.88rem;
-            color: var(--text-muted);
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'editor/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'editor/extras.css' %}">
 </head>
-
-<body>
-    <header class="navbar">
-        <a href="/" class="brand-logo">Skill<span>Bridge</span></a>
-        <a href="/accounts/login/" class="nav-link-btn">Login</a>
-    </header>
-
-    <main class="hero-section">
-        <div class="hero-badge">
-            ⚡ Peer-to-Peer Student Exchange
+<body class="landing-body">
+    <nav class="landing-nav">
+        <div class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-code-compare"></i></div>
+            <span class="brand-name">Skill<span>Bridge</span></span>
         </div>
-        <h1 class="hero-title">SkillBridge</h1>
-        <p class="hero-subtitle">A peer-to-peer skill exchange platform where students teach, learn, and grow together.
-        </p>
-
-        <a href="/accounts/signup/" class="cta-btn">
-            Create a New Account
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-                <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-        </a>
-    </main>
-
-    <section class="features-grid">
-        <div class="feature-card">
-            <div class="feature-icon">🎓</div>
-            <h3 class="feature-title">Teach Your Skill</h3>
-            <p class="feature-desc">Share your knowledge in coding, design, music, or languages with fellow students.
-            </p>
+        <a class="btn-yellow" href="{% url 'account_login' %}">Login</a>
+    </nav>
+    <section class="landing-hero">
+        <div>
+            <p class="p-tag">Peer-to-peer student exchange</p>
+            <h1 style="font-size:2.8rem;color:#713f12;margin:0.8rem 0;">Learn together.<br>Earn together.</h1>
+            <p style="color:#57534e;max-width:480px;margin-bottom:1.5rem;">Teach a skill, earn credits, and spend them to learn from other students.</p>
+            <a class="btn-yellow" href="{% url 'account_signup' %}">Create an account</a>
         </div>
-        <div class="feature-card">
-            <div class="feature-icon">⚡</div>
-            <h3 class="feature-title">Earn & Spend Credits</h3>
-            <p class="feature-desc">Earn credits when you teach, spend credits when you learn. Simple, fair, and free.
-            </p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🤝</div>
-            <h3 class="feature-title">Connect & Learn</h3>
-            <p class="feature-desc">Get matched with top peer tutors and schedule 1-on-1 learning sessions easily.</p>
+        <div class="landing-blob">
+            <h1>Peer Mentorship</h1>
+            <p>The Skill Bridge hero — same butter-yellow curve as the UI kit.</p>
         </div>
     </section>
-
-    <footer>
-        &copy; 2026 SkillBridge. All rights reserved.
-    </footer>
+    <section class="feature-row">
+        <div class="feature-card-y">
+            <h3>Teach</h3>
+            <p>List skills you can share with classmates.</p>
+        </div>
+        <div class="feature-card-y">
+            <h3>Credits</h3>
+            <p>Earn when you teach, spend when you learn.</p>
+        </div>
+        <div class="feature-card-y">
+            <h3>Connect</h3>
+            <p>Find peer mentors from the dashboard cards.</p>
+        </div>
+    </section>
 </body>
-
 </html>

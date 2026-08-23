@@ -1,0 +1,90 @@
+{% extends "editor/base_app.html" %}
+
+{% block title %}Sessions | Skill Bridge{% endblock %}
+{% block page_title %}Sessions{% endblock %}
+
+{% block content %}
+<h3>Incoming requests</h3>
+{% for s in incoming %}
+<div class="session-row">
+    <div>
+        <strong>{{ s.learner.get_full_name|default:s.learner.username }}</strong> wants <strong>{{ s.skill.name }}</strong>
+        <div class="peer-meta">1 credit · {{ s.created_at }}</div>
+    </div>
+    <form method="post" action="{% url 'accept_session' s.pk %}" class="session-actions">
+        {% csrf_token %}
+        <input type="datetime-local" name="scheduled_at" required>
+        <button class="btn-yellow" type="submit">Accept</button>
+    </form>
+    <form method="post" action="{% url 'reject_session' s.pk %}">
+        {% csrf_token %}
+        <button class="btn-ghost" type="submit">Reject</button>
+    </form>
+</div>
+{% empty %}
+<p>No incoming requests.</p>
+{% endfor %}
+
+<h3>Sent requests</h3>
+{% for s in sent %}
+<div class="session-row">
+    <div>Waiting on <strong>{{ s.teacher.username }}</strong> for <strong>{{ s.skill.name }}</strong></div>
+    <form method="post" action="{% url 'cancel_session' s.pk %}">
+        {% csrf_token %}
+        <button class="btn-ghost" type="submit">Cancel</button>
+    </form>
+</div>
+{% empty %}
+<p>No pending sent requests.</p>
+{% endfor %}
+
+<h3>Upcoming</h3>
+{% for s in upcoming %}
+<div class="session-row">
+    <div>
+        <strong>{{ s.skill.name }}</strong> with
+        {% if s.learner == request.user %}{{ s.teacher.username }}{% else %}{{ s.learner.username }}{% endif %}
+        <div class="peer-meta">{% if s.scheduled_at %}{{ s.scheduled_at }}{% endif %}</div>
+    </div>
+    <a class="btn-yellow" href="{% url 'join_session' s.pk %}" target="_blank" rel="noopener">Join Jitsi</a>
+    <form method="post" action="{% url 'complete_session' s.pk %}">
+        {% csrf_token %}
+        <input type="text" name="notes" placeholder="Session notes (for later AI)">
+        <button class="btn-yellow" type="submit">Mark complete</button>
+    </form>
+    <form method="post" action="{% url 'cancel_session' s.pk %}">
+        {% csrf_token %}
+        <button class="btn-ghost" type="submit">Cancel</button>
+    </form>
+</div>
+{% empty %}
+<p>No upcoming sessions.</p>
+{% endfor %}
+
+<h3>History</h3>
+{% for s in history %}
+<div class="session-row">
+    <div>
+        <strong>{{ s.skill.name }}</strong> · {{ s.status }}
+        with {% if s.learner == request.user %}{{ s.teacher.username }}{% else %}{{ s.learner.username }}{% endif %}
+    </div>
+    {% if s.status == "completed" and s.id not in rated_ids %}
+    <form method="post" action="{% url 'rate_session' s.pk %}" class="session-actions">
+        {% csrf_token %}
+        <select name="stars" required>
+            <option value="">Rate</option>
+            <option value="5">5</option>
+            <option value="4">4</option>
+            <option value="3">3</option>
+            <option value="2">2</option>
+            <option value="1">1</option>
+        </select>
+        <input type="text" name="comment" placeholder="Optional comment">
+        <button class="btn-yellow" type="submit">Save rating</button>
+    </form>
+    {% endif %}
+</div>
+{% empty %}
+<p>No history yet.</p>
+{% endfor %}
+{% endblock %}

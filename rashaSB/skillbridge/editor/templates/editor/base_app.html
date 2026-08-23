@@ -1,0 +1,259 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Skill Bridge{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'editor/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'editor/extras.css' %}">
+</head>
+<body data-open-edit="{% if open_edit_profile %}true{% else %}false{% endif %}">
+    <div class="app-shell">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <div class="brand-icon"><i class="fa-solid fa-code-compare"></i></div>
+                    <span class="brand-name">Skill<span>Bridge</span></span>
+                </div>
+                <button type="button" class="close-sidebar-btn" id="closeSidebarBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i><span>Dashboard</span>
+                </a>
+                <a href="{% url 'discover' %}" class="nav-item {% if request.resolver_match.url_name == 'discover' %}active{% endif %}">
+                    <i class="fa-solid fa-magnifying-glass"></i><span>Discover</span>
+                </a>
+                <a href="{% url 'sessions' %}" class="nav-item {% if request.resolver_match.url_name == 'sessions' %}active{% endif %}">
+                    <i class="fa-solid fa-calendar"></i><span>Sessions</span>
+                </a>
+                <a href="{% url 'credits' %}" class="nav-item {% if request.resolver_match.url_name == 'credits' %}active{% endif %}">
+                    <i class="fa-solid fa-coins"></i><span>Credits</span>
+                </a>
+                <a href="{% url 'profile' %}" class="nav-item {% if request.resolver_match.url_name == 'profile' %}active{% endif %}">
+                    <i class="fa-solid fa-user"></i><span>Profile</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-chip">
+                    <img src="{% static user_profile.avatar_static_path %}" alt="" class="chip-avatar">
+                    <div>
+                        <strong>{{ user.get_full_name|default:user.username }}</strong>
+                        <span>{{ user_profile.credits }} credits</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <div class="main-area">
+            <header class="top-header">
+                <div class="header-left">
+                    <button type="button" class="menu-toggle-btn" id="menuToggleBtn"><i class="fa-solid fa-bars"></i></button>
+                    <div>
+                        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                        <p class="header-sub">Welcome back, {{ user.first_name|default:user.username }}.</p>
+                    </div>
+                </div>
+                <form class="search-bar" method="get" action="{% url 'discover' %}">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" name="q" id="globalSearchInput" placeholder="Search mentors or skills..." value="{{ request.GET.q }}">
+                </form>
+                <div class="header-right">
+                    <button type="button" class="btn-yellow" data-skill-type="TEACH"><i class="fa-solid fa-plus"></i> Add skill</button>
+                    <div class="header-profile-wrap" style="position:relative;">
+                        <div class="profile-trigger" id="profileTrigger">
+                            <img src="{% static user_profile.avatar_static_path %}" alt="" width="36" height="36" style="border-radius:50%;object-fit:cover;">
+                            <div class="profile-info">
+                                <strong>{{ user.first_name|default:user.username }}</strong>
+                                <span>{{ user_profile.credits }} pts</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div class="user-profile-dropdown" id="userProfileDropdown">
+                            <div class="dropdown-header">
+                                <img src="{% static user_profile.avatar_static_path %}" class="dropdown-avatar" alt="">
+                                <div>
+                                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                                    <div>{{ user_profile.college|default:"Student" }}</div>
+                                </div>
+                            </div>
+                            <div class="dropdown-section">
+                                <h4>Skills</h4>
+                                <div class="tag-row">
+                                    {% for tag in user_profile.skill_tags %}
+                                    <span class="p-tag">{{ tag }}</span>
+                                    {% empty %}
+                                    <span class="p-tag">Add a skill</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="dropdown-section">
+                                <h4>To know</h4>
+                                <div class="tag-row">
+                                    {% for tag in user_profile.learn_tags %}
+                                    <span class="p-tag outline">{{ tag }}</span>
+                                    {% empty %}
+                                    <span class="p-tag outline">Set learn goals</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <button type="button" class="dropdown-item" data-open-modal="editProfileModal"><i class="fa-solid fa-user-pen"></i> Edit profile</button>
+                            <button type="button" class="dropdown-item" data-open-modal="privacyModal"><i class="fa-solid fa-shield-halved"></i> Account & privacy</button>
+                            <form method="post" action="{% url 'account_logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="content-scroll">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editProfileModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close" data-close-modal="editProfileModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Edit profile</h2>
+            <p style="color:#78716c;margin-bottom:1rem;">Pick one of the 8 avatars (they can be shared).</p>
+            <form method="post" action="{% url 'profile' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="profile">
+                <input type="hidden" name="avatar" id="avatarInput" value="{{ user_profile.avatar_file }}">
+                <div class="avatar-picker">
+                    {% for file in avatar_files %}
+                    {% with avatar_path='editor/avatars/'|add:file %}
+                    <button type="button" class="avatar-option {% if user_profile.avatar_file == file %}selected{% endif %}" data-avatar="{{ file }}">
+                        <img src="{% static avatar_path %}" alt="{{ file }}">
+                    </button>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+                <div class="form-grid">
+                    <label>Display name
+                        <input type="text" name="first_name" value="{{ user.first_name|default:user.username }}">
+                    </label>
+                    <label>College
+                        <input type="text" name="college" value="{{ user_profile.college }}">
+                    </label>
+                    <label>Department
+                        <input type="text" name="department" value="{{ user_profile.department }}">
+                    </label>
+                    <label>Skills to know (comma separated)
+                        <input type="text" name="learn_skills" value="{{ user_profile.learn_skills }}">
+                    </label>
+                    <label>Available hours
+                        <input type="text" name="available_hours" value="{{ user_profile.available_hours }}">
+                    </label>
+                    <label>Schedule
+                        <input type="text" name="schedule" value="{{ user_profile.schedule }}">
+                    </label>
+                    <label>Bio
+                        <textarea name="bio" rows="3">{{ user_profile.bio }}</textarea>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-close-modal="editProfileModal">Cancel</button>
+                    <button type="submit" class="btn-yellow">Save profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="privacyModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close" data-close-modal="privacyModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Account and privacy</h2>
+            <form method="post" action="{% url 'profile' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="privacy">
+                <div class="toggle-row">
+                    <div><strong>Public profile</strong><div>Peers can find you</div></div>
+                    <input type="checkbox" name="is_public" {% if user_profile.is_public %}checked{% endif %}>
+                </div>
+                <div class="toggle-row">
+                    <div><strong>Show available hours</strong></div>
+                    <input type="checkbox" name="show_hours" {% if user_profile.show_hours %}checked{% endif %}>
+                </div>
+                <div class="toggle-row">
+                    <div><strong>Allow session requests</strong></div>
+                    <input type="checkbox" name="allow_requests" {% if user_profile.allow_requests %}checked{% endif %}>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-close-modal="privacyModal">Cancel</button>
+                    <button type="submit" class="btn-yellow">Save settings</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="addSkillModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close" data-close-modal="addSkillModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="addSkillTitle">Add a skill to teach</h2>
+            <form method="post" action="{% url 'add_skill' %}">
+                {% csrf_token %}
+                <input type="hidden" name="skill_type" id="skillTypeInput" value="TEACH">
+                <div class="form-grid">
+                    <label>Skill name <input type="text" name="name" required placeholder="e.g. Python"></label>
+                    <label>Category
+                        <select name="category">
+                            <option>Programming</option>
+                            <option>Design</option>
+                            <option>Languages</option>
+                            <option>Music</option>
+                            <option>Academics</option>
+                            <option>Business</option>
+                            <option>Other</option>
+                        </select>
+                    </label>
+                    <label>Level
+                        <select name="proficiency">
+                            <option>Beginner</option>
+                            <option selected>Intermediate</option>
+                            <option>Advanced</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-close-modal="addSkillModal">Cancel</button>
+                    <button type="submit" class="btn-yellow">Save skill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="requestSessionModal">
+        <div class="modal-card">
+            <button type="button" class="modal-close" data-close-modal="requestSessionModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Request a session</h2>
+            <p id="requestSessionHint" style="color:#78716c;margin-bottom:1rem;"></p>
+            <form method="post" action="{% url 'request_session' %}">
+                {% csrf_token %}
+                <input type="hidden" name="skill_id" id="requestSkillId">
+                <p>Costs <strong>1 credit</strong> when the session is completed. The teacher can accept and you will get a Jitsi room.</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-close-modal="requestSessionModal">Cancel</button>
+                    <button type="submit" class="btn-yellow">Send request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{% static 'editor/app.js' %}"></script>
+</body>
+</html>
