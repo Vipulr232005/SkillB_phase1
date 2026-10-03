@@ -4,22 +4,53 @@
 {% block page_title %}Credits{% endblock %}
 
 {% block content %}
-<div class="stat-tile" style="max-width:280px;margin-bottom:1.5rem;">
-    <span>{{ profile.credits }}</span>
-    <small>Current balance</small>
-</div>
-<p>New accounts start with 10 credits. Completing a session moves 1 credit from learner to teacher.</p>
-
-<h3>Ledger</h3>
-{% for tx in ledger %}
-<div class="session-row">
+<section class="arch-hero">
     <div>
-        <strong>{{ tx.kind }}</strong> {{ tx.amount }} credit{{ tx.amount|pluralize }}
-        · {{ tx.session.skill.name }}
-        <div class="peer-meta">{{ tx.created_at }}</div>
+        <h2>Your balance</h2>
+        <p>Teach a session to earn a credit. Spend one each time you learn.</p>
+        <div class="hero-actions">
+            <a class="btn-yellow btn-dark" href="{% url 'discover' %}"><i class="fa-solid fa-compass"></i> Spend a credit</a>
+            <button type="button" class="btn-ghost" data-skill-type="TEACH"><i class="fa-solid fa-chalkboard-user"></i> Earn by teaching</button>
+        </div>
     </div>
-</div>
-{% empty %}
-<p>No credit movements yet. Complete a session to see the ledger.</p>
-{% endfor %}
+    <div class="balance">
+        <span class="balance-num">{{ profile.credits }}</span>
+        <span class="balance-label">credit{{ profile.credits|pluralize }}</span>
+    </div>
+</section>
+
+<section class="section">
+    <div class="how-it-works">
+        <div><strong>Start with 10</strong>Every new account gets 10 credits to begin learning.</div>
+        <div><strong>Pay on completion</strong>Nothing moves when you request. 1 credit moves when the session is marked complete.</div>
+        <div><strong>Cancel for free</strong>Cancelled or rejected sessions never cost a credit.</div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-head">
+        <div><h2>History<span class="count">{{ ledger|length }}</span></h2></div>
+    </div>
+    {% if ledger %}
+    <div class="ledger">
+        {% for tx in ledger %}
+        <div class="ledger-row {{ tx.kind }}">
+            <div class="ledger-icon">
+                {% if tx.kind == "earn" %}<i class="fa-solid fa-arrow-down"></i>{% else %}<i class="fa-solid fa-arrow-up"></i>{% endif %}
+            </div>
+            <div>
+                <strong>{% if tx.kind == "earn" %}Taught {% else %}Learned {% endif %}{{ tx.session.skill.name }}</strong>
+                <small>{{ tx.created_at|date:"M j, Y, g:i a" }}</small>
+            </div>
+            <span class="ledger-amt">{% if tx.amount > 0 %}+{% endif %}{{ tx.amount }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        <strong>No credit movements yet</strong>
+        Complete your first session and it will show up here.
+    </div>
+    {% endif %}
+</section>
 {% endblock %}

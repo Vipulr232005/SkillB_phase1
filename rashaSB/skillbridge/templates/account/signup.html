@@ -1,56 +1,54 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign up | Skill Bridge</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'editor/extras.css' %}">
-</head>
-<body class="auth-shell">
-    <div class="auth-card-y">
-        <h1>Create an account</h1>
-        <p style="color:#78716c;margin-bottom:1rem;">Join Skill Bridge with email and username.</p>
-        <div class="social-row">
-            <a href="/accounts/google/login/">Google</a>
-            <a href="/accounts/github/login/">GitHub</a>
-        </div>
-        <form method="post" action="{% url 'account_signup' %}">
-            {% csrf_token %}
-            {% if form.non_field_errors %}
-            <div class="flash">{{ form.non_field_errors.0 }}</div>
-            {% endif %}
-            <div class="form-group">
-                <label for="id_username">Username</label>
-                <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" required>
-                {% if form.username.errors %}<div class="flash">{{ form.username.errors.0 }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="id_email">Email</label>
-                <input type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}" required>
-                {% if form.email.errors %}<div class="flash">{{ form.email.errors.0 }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="id_age">Age</label>
-                <input type="number" name="age" id="id_age" min="13" max="100" value="{{ form.age.value|default:'' }}" required>
-                {% if form.age.errors %}<div class="flash">{{ form.age.errors.0 }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="id_college">College</label>
-                <input type="text" name="college" id="id_college" value="{{ form.college.value|default:'' }}" required>
-                {% if form.college.errors %}<div class="flash">{{ form.college.errors.0 }}</div>{% endif %}
-            </div>
-            <div class="form-group">
-                <label for="id_password1">Password</label>
-                <input type="password" name="password1" id="id_password1" required>
-                {% if form.password1.errors %}<div class="flash">{{ form.password1.errors.0 }}</div>{% endif %}
-            </div>
-            <button class="btn-continue" type="submit">Create account</button>
-        </form>
-        <p style="margin-top:1rem;text-align:center;">Already have an account? <a href="{% url 'account_login' %}">Sign in</a></p>
+{% extends "account/_auth_base.html" %}
+{% block title %}Sign up{% endblock %}
+{% block side_heading %}Start with 10 free credits.{% endblock %}
+{% block side_text %}Spend them learning from classmates. Earn more by teaching what you already know.{% endblock %}
+
+{% block content %}
+<h1>Create your account</h1>
+<p class="lede">Takes less than a minute.</p>
+<div class="social-row">
+    <a href="/accounts/google/login/"><i class="fa-brands fa-google"></i> Google</a>
+    <a href="/accounts/github/login/"><i class="fa-brands fa-github"></i> GitHub</a>
+</div>
+<div class="or-divider">or with email</div>
+<form method="post" action="{% url 'account_signup' %}">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="flash error" style="margin-bottom:16px;"><i class="fa-solid fa-circle-exclamation"></i><span>{{ form.non_field_errors.0 }}</span></div>
+    {% endif %}
+    <div class="form-group">
+        <label for="id_username">Username
+            <input type="text" name="username" id="id_username" autocomplete="username" value="{{ form.username.value|default:'' }}" required>
+        </label>
+        {% if form.username.errors %}<div class="field-error">{{ form.username.errors.0 }}</div>{% endif %}
     </div>
-</body>
-</html>
+    <div class="form-group">
+        <label for="id_email">Email
+            <input type="email" name="email" id="id_email" autocomplete="email" value="{{ form.email.value|default:'' }}" required>
+        </label>
+        {% if form.email.errors %}<div class="field-error">{{ form.email.errors.0 }}</div>{% endif %}
+    </div>
+    <div class="form-grid two" style="margin-top:0;">
+        <div class="form-group">
+            <label for="id_age">Age
+                <input type="number" name="age" id="id_age" min="13" max="100" value="{{ form.age.value|default:'' }}" required>
+            </label>
+            {% if form.age.errors %}<div class="field-error">{{ form.age.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+            <label for="id_college">College
+                <input type="text" name="college" id="id_college" value="{{ form.college.value|default:'' }}" required>
+            </label>
+            {% if form.college.errors %}<div class="field-error">{{ form.college.errors.0 }}</div>{% endif %}
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="id_password1">Password
+            <input type="password" name="password1" id="id_password1" autocomplete="new-password" required>
+        </label>
+        {% if form.password1.errors %}<div class="field-error">{{ form.password1.errors.0 }}</div>{% endif %}
+    </div>
+    <button class="btn-continue" type="submit">Create account</button>
+</form>
+<p class="auth-alt">Already have an account? <a href="{% url 'account_login' %}">Log in</a></p>
+{% endblock %}

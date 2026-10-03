@@ -62,14 +62,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const addSkillModal = document.getElementById("addSkillModal");
+    const skillTypeInput = document.getElementById("skillTypeInput");
+    const addSkillTitle = document.getElementById("addSkillTitle");
+    const addSkillSubmit = document.getElementById("addSkillSubmit");
+    const levelLabel = document.getElementById("levelLabel");
+    function setSkillType(type) {
+        if (skillTypeInput) skillTypeInput.value = type;
+        document.querySelectorAll("[data-type-choice]").forEach((b) => {
+            b.classList.toggle("on", b.getAttribute("data-type-choice") === type);
+        });
+        const learn = type === "LEARN";
+        if (addSkillTitle) addSkillTitle.textContent = learn ? "Add a skill to learn" : "Add a skill to teach";
+        if (addSkillSubmit) addSkillSubmit.textContent = learn ? "Add to learning" : "Add skill to teach";
+        if (levelLabel) levelLabel.firstChild.textContent = learn ? "Current level" : "Your level";
+    }
+    document.querySelectorAll("[data-type-choice]").forEach((b) => {
+        b.addEventListener("click", () => setSkillType(b.getAttribute("data-type-choice")));
+    });
     document.querySelectorAll("[data-skill-type]").forEach((btn) => {
         btn.addEventListener("click", () => {
-            const type = btn.getAttribute("data-skill-type");
-            const input = document.getElementById("skillTypeInput");
-            const title = document.getElementById("addSkillTitle");
-            if (input) input.value = type;
-            if (title) title.textContent = type === "LEARN" ? "Add a skill to learn" : "Add a skill to teach";
-            if (addSkillModal) addSkillModal.classList.add("active");
+            setSkillType(btn.getAttribute("data-skill-type"));
+            if (addSkillModal) {
+                addSkillModal.classList.add("active");
+                const first = addSkillModal.querySelector("input[name=name]");
+                if (first) setTimeout(() => first.focus(), 50);
+            }
         });
     });
 
@@ -79,9 +96,16 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".js-request").forEach((btn) => {
         btn.addEventListener("click", () => {
             if (requestSkillId) requestSkillId.value = btn.getAttribute("data-skill-id");
-            if (requestHint) requestHint.textContent = "Request: " + (btn.getAttribute("data-label") || "");
+            if (requestHint) requestHint.textContent = btn.getAttribute("data-label") || "";
             if (requestModal) requestModal.classList.add("active");
         });
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        document.querySelectorAll(".modal-overlay.active").forEach((m) => m.classList.remove("active"));
+        if (dropdown) dropdown.classList.remove("show");
+        toggleSidebar(false);
     });
 
     if (document.body.dataset.openEdit === "true") {

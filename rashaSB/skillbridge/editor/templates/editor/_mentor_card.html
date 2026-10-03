@@ -1,0 +1,25 @@
+{% load static %}
+<article class="mentor">
+    <div class="mentor-top">
+        <img src="{% static skill.user.profile.avatar_static_path %}" alt="">
+        <div class="mentor-who">
+            <a href="{% url 'public_profile' skill.user.username %}">{{ skill.user.get_full_name|default:skill.user.username }}</a>
+            <small>{{ skill.user.profile.college|default:"Student" }}</small>
+        </div>
+    </div>
+    <div>
+        <div class="mentor-skill">{{ skill.name }}</div>
+        <div class="chips" style="margin-top:8px;">
+            <span class="chip star"><i class="fa-solid fa-star"></i>{{ skill.user.profile.stars_label }}</span>
+            <span class="chip">{{ skill.proficiency }}</span>
+        </div>
+    </div>
+    <div class="mentor-actions">
+        <a class="btn-ghost btn-sm" href="{% url 'public_profile' skill.user.username %}">Profile</a>
+        {% if skill.user.profile.allow_requests %}
+        <button type="button" class="btn-yellow btn-sm js-request"
+            data-skill-id="{{ skill.id }}"
+            data-label="{{ skill.name }} with {{ skill.user.get_full_name|default:skill.user.username }}">Request session</button>
+        {% endif %}
+    </div>
+</article>

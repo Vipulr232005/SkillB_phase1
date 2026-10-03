@@ -1,54 +1,56 @@
 {% extends "editor/base_app.html" %}
 {% load static %}
 
-{% block title %}Room — {{ session.skill.name }} | Skill Bridge{% endblock %}
+{% block title %}{{ session.skill.name }} room | Skill Bridge{% endblock %}
 {% block page_title %}Session room{% endblock %}
 
 {% block content %}
-<div class="room-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+<div class="room-head">
     <div>
-        <h3 style="margin:0;"><i class="fa-solid fa-video"></i> {{ session.skill.name }} with {% if session.learner == request.user %}{{ session.teacher.username }}{% else %}{{ session.learner.username }}{% endif %}</h3>
-        <div class="peer-meta">Room: <code>{{ room_name }}</code> · <a href="{{ session.meet_url }}" target="_blank" rel="noopener" style="color:var(--gold);">{{ session.meet_url }}</a></div>
+        <h2>{{ session.skill.name }}</h2>
+        <p class="sub">
+            With {% if session.learner == request.user %}{{ session.teacher.get_full_name|default:session.teacher.username }}{% else %}{{ session.learner.get_full_name|default:session.learner.username }}{% endif %}
+            in room <code>{{ room_name }}</code>
+        </p>
     </div>
-    <a href="{% url 'sessions' %}" class="btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to sessions</a>
+    <a href="{% url 'sessions' %}" class="btn-ghost btn-sm"><i class="fa-solid fa-arrow-left"></i> Back to sessions</a>
 </div>
 
-<div id="consentGate" class="ai-summary-card" style="margin-bottom:1rem;border-left-color:var(--primary-yellow);">
-    <div class="ai-summary-header"><i class="fa-solid fa-shield-halved" style="color:var(--gold);"></i> Recording consent</div>
-    <p style="color:var(--text-secondary);font-size:0.92rem;margin:0.5rem 0 0.75rem;">This session will be recorded for an AI summary. Your microphone audio will be captured locally in your browser and uploaded as <code>audio/webm</code> when you end the call. Recording starts only after you consent.</p>
-    <p style="color:var(--text-secondary);font-size:0.85rem;margin:0 0 0.75rem;"><strong>Limitation:</strong> each browser records only its own mic (no merged two-speaker track). A true mixed transcript would need server-side mixing (Jibri) — out of scope for this demo.</p>
-    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:700;font-size:0.9rem;margin-bottom:0.75rem;">
-        <input type="checkbox" id="consentCheck"> I consent to recording my audio for transcription & summary
+<div id="consentGate" class="consent-card">
+    <h3><i class="fa-solid fa-microphone"></i> Record this session?</h3>
+    <p>If you agree, your microphone is recorded in this browser while you talk. When you stop, the audio is uploaded and turned into a transcript you can summarize later.</p>
+    <p class="note">Each person's browser records only their own microphone. Recording starts only when you press Start recording.</p>
+    <label class="consent-check">
+        <input type="checkbox" id="consentCheck">
+        <span>I agree to have my audio recorded for a transcript and summary</span>
     </label>
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-        <button type="button" id="enterRoomBtn" class="btn-yellow" disabled><i class="fa-solid fa-right-to-bracket"></i> Enter room</button>
-        <button type="button" id="noConsentBtn" class="btn-ghost" onclick="document.getElementById('consentGate').style.display='none';document.getElementById('jitsi-container').style.display='block';initJitsi();">Join without recording</button>
+    <div class="consent-actions">
+        <button type="button" id="enterRoomBtn" class="btn-yellow" disabled><i class="fa-solid fa-right-to-bracket"></i> Join with recording</button>
+        <button type="button" id="noConsentBtn" class="btn-ghost">Join without recording</button>
     </div>
-    <div id="consentStatus" class="peer-meta" style="margin-top:0.5rem;"></div>
+    <div id="consentStatus" class="room-status"></div>
 </div>
 
-<div id="jitsi-container" style="width:100%;height:600px;background:#1c1917;border-radius:var(--radius-md);border:1px solid var(--border-subtle);display:none;overflow:hidden;"></div>
+<div id="jitsi-container" class="stage"></div>
 
-<div id="roomControls" style="display:none;margin-top:1rem;display:none;flex-wrap:wrap;gap:0.5rem;align-items:center;">
-    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-        <button type="button" id="startRecBtn" class="btn-yellow" disabled><i class="fa-solid fa-circle-dot"></i> Start recording</button>
-        <button type="button" id="stopRecBtn" class="btn-ghost" disabled><i class="fa-solid fa-stop"></i> Stop & upload</button>
-        <span id="recIndicator" style="display:none;align-items:center;gap:0.4rem;color:#dc2626;font-weight:700;font-size:0.85rem;"><span style="width:10px;height:10px;background:#dc2626;border-radius:50%;display:inline-block;animation:pulse 1.2s infinite;"></span> Recording… <span id="recTimer">0:00</span></span>
-    </div>
-    <div style="margin-left:auto;display:flex;gap:0.5rem;">
-        <a href="{% url 'sessions' %}" class="btn-ghost">Leave room</a>
-        <button type="button" id="endAndSummarizeBtn" class="btn-yellow" disabled><i class="fa-solid fa-flag-checkered"></i> End &amp; upload</button>
-    </div>
-    <div id="uploadStatus" class="peer-meta" style="width:100%;margin-top:0.4rem;"></div>
+<div id="roomControls" class="room-bar">
+    <button type="button" id="startRecBtn" class="btn-yellow btn-rec btn-sm" disabled><i class="fa-solid fa-circle"></i> Start recording</button>
+    <button type="button" id="stopRecBtn" class="btn-ghost btn-sm" disabled><i class="fa-solid fa-stop"></i> Stop and upload</button>
+    <span id="recIndicator" class="rec-indicator"><span class="rec-dot"></span> Recording <span id="recTimer">0:00</span></span>
+    <span class="spacer"></span>
+    <button type="button" id="endAndSummarizeBtn" class="btn-ghost btn-sm" disabled><i class="fa-solid fa-cloud-arrow-up"></i> Upload recording</button>
+    <a href="{% url 'sessions' %}" class="btn-quiet btn-sm">Leave room</a>
 </div>
+<div id="uploadStatus" class="room-status" role="status"></div>
 
-<div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
-    <form method="post" action="{% url 'complete_session' session.pk %}" style="display:inline-flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        {% csrf_token %}
-        <input type="text" name="notes" placeholder="Session notes (used if no transcript yet)" style="min-width:220px;">
-        <button class="btn-yellow" type="submit"><i class="fa-solid fa-flag-checkered"></i> Mark complete</button>
-    </form>
-</div>
+<form method="post" action="{% url 'complete_session' session.pk %}" class="room-notes">
+    {% csrf_token %}
+    <label class="field">
+        <span class="field-label">Notes (used for the summary if there's no transcript)</span>
+        <input type="text" name="notes" placeholder="What did you cover?">
+    </label>
+    <button class="btn-yellow" type="submit"><i class="fa-solid fa-flag-checkered"></i> Mark complete</button>
+</form>
 
 <script src="{{ jitsi_base_url }}/external_api.js"></script>
 <script>
@@ -59,8 +61,10 @@
     let recStart = null;
     let timerInt = null;
     let hasConsented = false;
+    const gate = document.getElementById('consentGate');
     const consentCheck = document.getElementById('consentCheck');
     const enterBtn = document.getElementById('enterRoomBtn');
+    const noConsentBtn = document.getElementById('noConsentBtn');
     const jitsiContainer = document.getElementById('jitsi-container');
     const roomControls = document.getElementById('roomControls');
     const startBtn = document.getElementById('startRecBtn');
@@ -71,16 +75,22 @@
     const uploadStatus = document.getElementById('uploadStatus');
     const consentStatus = document.getElementById('consentStatus');
 
+    function showStage(){
+        gate.style.display = 'none';
+        jitsiContainer.style.display = 'block';
+    }
+
     consentCheck.addEventListener('change', () => {
         enterBtn.disabled = !consentCheck.checked;
     });
+    noConsentBtn.addEventListener('click', () => {
+        showStage();
+        initJitsi();
+    });
     enterBtn.addEventListener('click', async () => {
         hasConsented = true;
-        document.getElementById('consentGate').style.display = 'none';
-        jitsiContainer.style.display = 'block';
+        showStage();
         roomControls.style.display = 'flex';
-        consentStatus.textContent = '';
-        // persist consent
         try {
             await fetch("{% url 'upload_consent' session.pk %}", {
                 method: 'POST',
@@ -89,7 +99,6 @@
             });
         } catch(e) {}
         initJitsi();
-        // try to init recorder after consent
         initRecorder();
     });
 
@@ -101,7 +110,7 @@
             roomName: "{{ room_name|escapejs }}",
             parentNode: jitsiContainer,
             width: '100%',
-            height: 600,
+            height: '100%',
             userInfo: { displayName: "{{ request.user.get_full_name|default:request.user.username|escapejs }}" },
             configOverwrite: { startWithAudioMuted: false, startWithVideoMuted: false },
         };
@@ -111,11 +120,10 @@
                 window.location.href = "{% url 'sessions' %}";
             });
             if(hasConsented) {
-                startBtn.disabled = false;
                 endBtn.disabled = false;
             }
         } catch(e) {
-            jitsiContainer.innerHTML = '<div style="padding:2rem;color:#fff;">Jitsi failed to load. <a href="{{ session.meet_url }}" target=\"_blank\" style=\"color:#fde047;\">Open directly</a> — check that {{ jitsi_base_url }} is reachable and the cert is trusted.</div>';
+            jitsiContainer.innerHTML = '<div class="stage-error">The video room could not load. Open <a href="{{ jitsi_base_url|escapejs }}" target="_blank" rel="noopener">{{ jitsi_base_url|escapejs }}</a> once and accept its certificate, then reload this page.</div>';
             console.error(e);
         }
     };
@@ -129,9 +137,9 @@
             mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
             mediaRecorder.onstop = () => { uploadRecording(); };
             startBtn.disabled = false;
-            consentStatus.textContent = 'Microphone ready.';
+            uploadStatus.textContent = 'Microphone ready. Press Start recording when you begin.';
         } catch(e) {
-            consentStatus.textContent = 'Mic access denied: ' + e.message;
+            uploadStatus.textContent = 'Microphone access was blocked. Allow it in the browser address bar, then reload.';
             startBtn.disabled = true;
         }
     }
@@ -139,6 +147,13 @@
     function formatTime(ms){
         const s = Math.floor(ms/1000);
         return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    }
+
+    function stopUi(){
+        clearInterval(timerInt);
+        recIndicator.style.display = 'none';
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
     }
 
     startBtn.addEventListener('click', () => {
@@ -149,33 +164,30 @@
         startBtn.disabled = true;
         stopBtn.disabled = false;
         recIndicator.style.display = 'inline-flex';
+        recTimer.textContent = '0:00';
         timerInt = setInterval(()=>{ recTimer.textContent = formatTime(Date.now()-recStart); }, 500);
         uploadStatus.textContent = '';
     });
     stopBtn.addEventListener('click', () => {
         if(mediaRecorder && mediaRecorder.state==='recording'){
             mediaRecorder.stop();
-            clearInterval(timerInt);
-            recIndicator.style.display='none';
-            startBtn.disabled = false;
-            stopBtn.disabled = true;
+            stopUi();
         }
     });
     endBtn.addEventListener('click', () => {
         if(mediaRecorder && mediaRecorder.state==='recording'){
             mediaRecorder.stop();
-            clearInterval(timerInt);
-            recIndicator.style.display='none';
+            stopUi();
         } else if(recordedChunks.length){
             uploadRecording();
         } else {
-            uploadStatus.textContent = 'No audio recorded yet — upload requires at least a few seconds.';
+            uploadStatus.textContent = 'Nothing recorded yet. Press Start recording first.';
         }
     });
 
     async function uploadRecording(){
         if(!recordedChunks.length){
-            uploadStatus.textContent = 'No audio to upload.';
+            uploadStatus.textContent = 'Nothing recorded yet.';
             return;
         }
         const duration = recStart ? Math.round((Date.now()-recStart)/1000) : null;
@@ -183,7 +195,7 @@
         const form = new FormData();
         form.append('audio', blob, 'recording.webm');
         if(duration) form.append('duration_seconds', String(duration));
-        uploadStatus.textContent = 'Uploading ' + (blob.size/1024).toFixed(1) + ' KB…';
+        uploadStatus.textContent = 'Uploading ' + (blob.size/1024).toFixed(0) + ' KB…';
         try {
             const resp = await fetch("{% url 'upload_audio' session.pk %}", {
                 method: 'POST',
@@ -192,18 +204,15 @@
             });
             const data = await resp.json().catch(()=>({}));
             if(resp.ok && data.ok){
-                uploadStatus.textContent = 'Upload done — status: ' + (data.status||'uploaded') + '. Transcript will appear after processing.';
+                uploadStatus.textContent = 'Recording uploaded. The transcript will appear on the Sessions page after you mark this session complete.';
                 recordedChunks = [];
             } else {
-                uploadStatus.textContent = 'Upload failed: ' + (data.error || resp.statusText);
+                uploadStatus.textContent = 'Upload failed: ' + (data.error || resp.statusText) + '. Try again.';
             }
         } catch(e){
-            uploadStatus.textContent = 'Upload error: ' + e.message;
+            uploadStatus.textContent = 'Upload failed: ' + e.message + '. Check your connection and try again.';
         }
     }
 })();
 </script>
-<style>
-@keyframes pulse{0%{opacity:1}50%{opacity:0.4}100%{opacity:1}}
-</style>
 {% endblock %}

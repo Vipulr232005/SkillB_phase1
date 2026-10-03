@@ -5,9 +5,12 @@
 {% block page_title %}Discover{% endblock %}
 
 {% block content %}
-<form class="filter-bar" method="get">
-    <input type="text" name="q" value="{{ query }}" placeholder="Search Python, Figma, Spanish...">
-    <select name="category">
+<form class="filter-bar" method="get" role="search">
+    <div class="search-field">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" name="q" value="{{ query }}" placeholder="Search a skill or a name" aria-label="Search">
+    </div>
+    <select name="category" aria-label="Category">
         <option value="">All categories</option>
         {% for cat in categories %}
         <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
@@ -16,25 +19,27 @@
     <button type="submit" class="btn-yellow">Search</button>
 </form>
 
-<div class="peer-cards-grid">
+<nav class="category-pills" aria-label="Quick categories">
+    <a href="?q={{ query|urlencode }}" class="{% if not category %}on{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="?q={{ query|urlencode }}&category={{ cat|urlencode }}" class="{% if category == cat %}on{% endif %}">{{ cat }}</a>
+    {% endfor %}
+</nav>
+
+{% if peer_skills %}
+<p class="result-line">
+    {{ peer_skills|length }} teacher{{ peer_skills|length|pluralize }}{% if query %} for “{{ query }}”{% endif %}{% if category %} in {{ category }}{% endif %}
+</p>
+<div class="mentor-grid">
     {% for skill in peer_skills %}
-    <article class="peer-card">
-        <div class="peer-avatar-wrap">
-            <img src="{% static skill.user.profile.avatar_static_path %}" alt="">
-        </div>
-        <h4>{{ skill.user.get_full_name|default:skill.user.username }}</h4>
-        <span class="peer-skill">{{ skill.name }}</span>
-        <div class="peer-meta">{{ skill.category }} · {{ skill.proficiency }} · ★ {{ skill.user.profile.stars_label }}</div>
-        <div class="peer-actions">
-            <a class="btn-ghost" href="{% url 'public_profile' skill.user.username %}">Profile</a>
-            {% if skill.user.profile.allow_requests %}
-            <button type="button" class="btn-yellow js-request" data-skill-id="{{ skill.id }}"
-                data-label="{{ skill.name }} with {{ skill.user.username }}">Request</button>
-            {% endif %}
-        </div>
-    </article>
-    {% empty %}
-    <p>No matching teachers. Try another search.</p>
+    {% include "editor/_mentor_card.html" %}
     {% endfor %}
 </div>
+{% else %}
+<div class="empty">
+    <strong>No matching teachers</strong>
+    Try a broader search, or pick a different category.
+    {% if query or category %}<div><a class="btn-ghost" href="{% url 'discover' %}">Clear filters</a></div>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

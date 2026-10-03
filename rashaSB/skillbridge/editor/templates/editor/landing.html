@@ -4,46 +4,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skill Bridge</title>
+    <title>Skill Bridge — learn from other students</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{% static 'editor/styles.css' %}">
     <link rel="stylesheet" href="{% static 'editor/extras.css' %}">
+    <link rel="stylesheet" href="{% static 'editor/ui.css' %}">
 </head>
 <body class="landing-body">
     <nav class="landing-nav">
-        <div class="brand">
+        <a class="brand" href="/">
             <div class="brand-icon"><i class="fa-solid fa-code-compare"></i></div>
             <span class="brand-name">Skill<span>Bridge</span></span>
+        </a>
+        <div class="nav-links">
+            <a class="btn-quiet" href="{% url 'account_login' %}" style="color:var(--stone-900);">Log in</a>
+            <a class="btn-yellow" href="{% url 'account_signup' %}">Sign up free</a>
         </div>
-        <a class="btn-yellow" href="{% url 'account_login' %}">Login</a>
     </nav>
+
     <section class="landing-hero">
         <div>
-            <p class="p-tag">Peer-to-peer student exchange</p>
-            <h1 style="font-size:2.8rem;color:#713f12;margin:0.8rem 0;">Learn together.<br>Earn together.</h1>
-            <p style="color:#57534e;max-width:480px;margin-bottom:1.5rem;">Teach a skill, earn credits, and spend them to learn from other students.</p>
-            <a class="btn-yellow" href="{% url 'account_signup' %}">Create an account</a>
+            <h1>Teach what you know. Learn what you don't.</h1>
+            <p class="lede">Skill Bridge connects students who trade lessons. Teach a session to earn a credit, then spend it learning from someone else. No money involved.</p>
+            <div class="hero-actions">
+                <a class="btn-yellow" href="{% url 'account_signup' %}">Create your account</a>
+                <a class="btn-ghost" href="{% url 'account_login' %}">I already have one</a>
+            </div>
         </div>
-        <div class="landing-blob">
-            <h1>Peer Mentorship</h1>
-            <p>The Skill Bridge hero — same butter-yellow curve as the UI kit.</p>
+
+        <div class="bridge-art" aria-hidden="true">
+            <svg viewBox="0 0 500 400" preserveAspectRatio="none">
+                <path d="M -10 330 Q 250 20 510 330" fill="none" stroke="#422006" stroke-width="10" stroke-linecap="round"/>
+                <path d="M -10 330 Q 250 60 510 330" fill="none" stroke="rgba(255,255,255,.45)" stroke-width="26"/>
+                <g stroke="#422006" stroke-width="4" opacity=".35">
+                    <line x1="100" y1="235" x2="100" y2="330"/>
+                    <line x1="160" y1="196" x2="160" y2="330"/>
+                    <line x1="220" y1="180" x2="220" y2="330"/>
+                    <line x1="280" y1="180" x2="280" y2="330"/>
+                    <line x1="340" y1="196" x2="340" y2="330"/>
+                    <line x1="400" y1="235" x2="400" y2="330"/>
+                </g>
+                <rect x="-10" y="330" width="520" height="80" fill="#eab308"/>
+            </svg>
+            <div class="coin"><i class="fa-solid fa-coins"></i> 1 credit</div>
+            <div class="person left">
+                <img src="{% static 'editor/avatars/c2.jpg' %}" alt="">
+                <span>Teaches Python</span>
+            </div>
+            <div class="person right">
+                <img src="{% static 'editor/avatars/w1.jpg' %}" alt="">
+                <span>Teaches Figma</span>
+            </div>
         </div>
     </section>
-    <section class="feature-row">
-        <div class="feature-card-y">
-            <h3>Teach</h3>
-            <p>List skills you can share with classmates.</p>
+
+    <section class="steps">
+        <div>
+            <div class="step-n">1</div>
+            <h3>List your skills</h3>
+            <p>Add what you can teach and what you want to learn. You start with 10 credits.</p>
         </div>
-        <div class="feature-card-y">
-            <h3>Credits</h3>
-            <p>Earn when you teach, spend when you learn.</p>
+        <div>
+            <div class="step-n">2</div>
+            <h3>Meet in a video room</h3>
+            <p>Request a session, get accepted, and join a built-in video call. Record it if you both agree.</p>
         </div>
-        <div class="feature-card-y">
-            <h3>Connect</h3>
-            <p>Find peer mentors from the dashboard cards.</p>
+        <div>
+            <div class="step-n">3</div>
+            <h3>Trade a credit</h3>
+            <p>When the session is done, 1 credit moves to the teacher and you both rate each other.</p>
         </div>
     </section>
 </body>

@@ -1,36 +1,71 @@
 {% extends "editor/base_app.html" %}
 {% load static %}
 
-{% block title %}{{ peer.username }} | Skill Bridge{% endblock %}
+{% block title %}{{ peer.get_full_name|default:peer.username }} | Skill Bridge{% endblock %}
 {% block page_title %}Profile{% endblock %}
 
 {% block content %}
-<section class="public-hero">
-    <img src="{% static peer_profile.avatar_static_path %}" alt="" class="public-avatar">
+<section class="profile-hero">
+    <img src="{% static peer_profile.avatar_static_path %}" alt="">
     <div>
         <h2>{{ peer.get_full_name|default:peer.username }}</h2>
-        <p>{{ peer_profile.college }} {% if peer_profile.department %}· {{ peer_profile.department }}{% endif %}</p>
-        <p>★ {{ peer_profile.stars_label }} · {{ peer_profile.credits }} credits</p>
+        <p class="sub">
+            {{ peer_profile.college|default:"Student" }}{% if peer_profile.department %}, {{ peer_profile.department }}{% endif %}
+        </p>
         {% if peer_profile.show_hours %}
-        <p>{{ peer_profile.available_hours }} · {{ peer_profile.schedule }}</p>
+        <div class="chips">
+            {% if peer_profile.available_hours %}<span class="chip"><i class="fa-regular fa-clock"></i>{{ peer_profile.available_hours }}</span>{% endif %}
+            {% if peer_profile.schedule %}<span class="chip"><i class="fa-regular fa-calendar"></i>{{ peer_profile.schedule }}</span>{% endif %}
+        </div>
         {% endif %}
-        <p>{{ peer_profile.bio|default:"No bio yet." }}</p>
+    </div>
+    <div class="profile-rating">
+        <strong>{% if peer_profile.rating_count %}{{ peer_profile.average_rating|floatformat:1 }}{% else %}New{% endif %}</strong>
+        <span>{% if peer_profile.rating_count %}{{ peer_profile.rating_count }} rating{{ peer_profile.rating_count|pluralize }}{% else %}No ratings yet{% endif %}</span>
     </div>
 </section>
 
-<h3>Teaches</h3>
-<div class="peer-cards-grid">
-    {% for skill in teach_skills %}
-    <article class="peer-card">
-        <h4>{{ skill.name }}</h4>
-        <div class="peer-meta">{{ skill.category }} · {{ skill.proficiency }}</div>
-        {% if peer != request.user and peer_profile.allow_requests %}
-        <button type="button" class="btn-yellow js-request" data-skill-id="{{ skill.id }}"
-            data-label="{{ skill.name }} with {{ peer.username }}">Request session</button>
+{% if peer_profile.bio %}
+<p class="bio">{{ peer_profile.bio }}</p>
+{% endif %}
+
+<section class="section">
+    <div class="section-head">
+        <div>
+            <h2>Teaches<span class="count">{{ teach_skills|length }}</span></h2>
+            {% if peer != request.user and not peer_profile.allow_requests %}<p>Not taking requests right now.</p>{% endif %}
+        </div>
+        {% if peer == request.user %}<button type="button" class="btn-ghost btn-sm" data-open-modal="editProfileModal">Edit profile</button>{% endif %}
+    </div>
+    {% if teach_skills %}
+    <div class="skill-list">
+        {% for skill in teach_skills %}
+        <div class="skill-row">
+            <div>
+                <h4>{{ skill.name }}</h4>
+                <div class="chips">
+                    <span class="chip">{{ skill.proficiency }}</span>
+                    <span class="chip">{{ skill.category }}</span>
+                </div>
+            </div>
+            {% if peer != request.user and peer_profile.allow_requests %}
+            <button type="button" class="btn-yellow js-request" data-skill-id="{{ skill.id }}"
+                data-label="{{ skill.name }} with {{ peer.get_full_name|default:peer.username }}">Request session</button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+        {% if peer == request.user %}
+        <strong>You aren't teaching anything yet</strong>
+        Add a skill so classmates can request sessions with you.
+        <div><button type="button" class="btn-yellow" data-skill-type="TEACH"><i class="fa-solid fa-plus"></i> Add a skill to teach</button></div>
+        {% else %}
+        <strong>No skills listed yet</strong>
+        Check back later.
         {% endif %}
-    </article>
-    {% empty %}
-    <p>No teach skills listed.</p>
-    {% endfor %}
-</div>
+    </div>
+    {% endif %}
+</section>
 {% endblock %}

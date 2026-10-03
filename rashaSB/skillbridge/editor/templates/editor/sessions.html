@@ -6,73 +6,16 @@
 
 {% block content %}
 <section class="session-group">
-    <h3 class="session-group-title"><i class="fa-solid fa-inbox"></i> Incoming requests</h3>
-    {% for s in incoming %}
-    <div class="session-card">
-        <div class="session-card-top">
-            <div class="session-card-info">
-                <div class="session-card-title">{{ s.skill.name }}</div>
-                <div class="session-card-sub">
-                    <strong>{{ s.learner.get_full_name|default:s.learner.username }}</strong> wants to learn this
-                </div>
-                <div class="session-card-meta"><i class="fa-solid fa-coins"></i> 1 credit · {{ s.created_at|date:"M j, Y, g:i a" }}</div>
-            </div>
-            <span class="status-badge status-requested">Requested</span>
-        </div>
-        <div class="session-card-foot">
-            <form method="post" action="{% url 'accept_session' s.pk %}" class="action-inline">
-                {% csrf_token %}
-                <label class="field">
-                    <span class="field-label">Schedule for</span>
-                    <input type="datetime-local" name="scheduled_at" required>
-                </label>
-                <button class="btn-yellow" type="submit"><i class="fa-solid fa-check"></i> Accept</button>
-            </form>
-            <form method="post" action="{% url 'reject_session' s.pk %}">
-                {% csrf_token %}
-                <button class="btn-ghost" type="submit">Reject</button>
-            </form>
-        </div>
-    </div>
-    {% empty %}
-    <p class="session-empty">No incoming requests.</p>
-    {% endfor %}
-</section>
-
-<section class="session-group">
-    <h3 class="session-group-title"><i class="fa-solid fa-paper-plane"></i> Sent requests</h3>
-    {% for s in sent %}
-    <div class="session-card">
-        <div class="session-card-top">
-            <div class="session-card-info">
-                <div class="session-card-title">{{ s.skill.name }}</div>
-                <div class="session-card-sub">Waiting on <strong>{{ s.teacher.username }}</strong></div>
-            </div>
-            <span class="status-badge status-pending">Pending</span>
-        </div>
-        <div class="session-card-foot">
-            <form method="post" action="{% url 'cancel_session' s.pk %}">
-                {% csrf_token %}
-                <button class="btn-ghost" type="submit">Cancel request</button>
-            </form>
-        </div>
-    </div>
-    {% empty %}
-    <p class="session-empty">No pending sent requests.</p>
-    {% endfor %}
-</section>
-
-<section class="session-group">
-    <h3 class="session-group-title"><i class="fa-solid fa-calendar-check"></i> Upcoming</h3>
+    <h3 class="session-group-title"><i class="fa-solid fa-video"></i> Upcoming<span class="count">{{ upcoming|length }}</span></h3>
     {% for s in upcoming %}
     <div class="session-card">
         <div class="session-card-top">
             <div class="session-card-info">
                 <div class="session-card-title">{{ s.skill.name }}</div>
                 <div class="session-card-sub">
-                    with <strong>{% if s.learner == request.user %}{{ s.teacher.username }}{% else %}{{ s.learner.username }}{% endif %}</strong>
+                    {% if s.learner == request.user %}Learning from <strong>{{ s.teacher.get_full_name|default:s.teacher.username }}</strong>{% else %}Teaching <strong>{{ s.learner.get_full_name|default:s.learner.username }}</strong>{% endif %}
                 </div>
-                {% if s.scheduled_at %}<div class="session-card-meta"><i class="fa-regular fa-clock"></i> {{ s.scheduled_at|date:"M j, Y, g:i a" }}</div>{% endif %}
+                {% if s.scheduled_at %}<div class="session-card-meta"><i class="fa-regular fa-clock"></i>{{ s.scheduled_at|date:"D, M j \a\t g:i a" }}</div>{% endif %}
             </div>
             <span class="status-badge status-accepted">Accepted</span>
         </div>
@@ -81,32 +24,90 @@
             <form method="post" action="{% url 'complete_session' s.pk %}" class="action-inline action-grow">
                 {% csrf_token %}
                 <label class="field field-grow">
-                    <span class="field-label">Session notes</span>
-                    <input type="text" name="notes" placeholder="What did you cover? (used for the AI summary)">
+                    <span class="field-label">Notes (optional, used for the AI summary)</span>
+                    <input type="text" name="notes" placeholder="What did you cover?">
                 </label>
-                <button class="btn-yellow" type="submit"><i class="fa-solid fa-flag-checkered"></i> Mark complete</button>
+                <button class="btn-ghost" type="submit"><i class="fa-solid fa-flag-checkered"></i> Mark complete</button>
             </form>
             <form method="post" action="{% url 'cancel_session' s.pk %}">
                 {% csrf_token %}
-                <button class="btn-ghost" type="submit">Cancel</button>
+                <button class="btn-quiet" type="submit">Cancel session</button>
             </form>
         </div>
     </div>
     {% empty %}
-    <p class="session-empty">No upcoming sessions.</p>
+    <p class="session-empty">No sessions scheduled. Accepted requests show up here with a room to join.</p>
     {% endfor %}
 </section>
 
 <section class="session-group">
-    <h3 class="session-group-title"><i class="fa-solid fa-clock-rotate-left"></i> History</h3>
+    <h3 class="session-group-title"><i class="fa-solid fa-inbox"></i> Requests for you<span class="count">{{ incoming|length }}</span></h3>
+    {% for s in incoming %}
+    <div class="session-card">
+        <div class="session-card-top">
+            <div class="session-card-info">
+                <div class="session-card-title">{{ s.skill.name }}</div>
+                <div class="session-card-sub">
+                    <strong>{{ s.learner.get_full_name|default:s.learner.username }}</strong> wants to learn this from you
+                </div>
+                <div class="session-card-meta"><i class="fa-solid fa-coins"></i>You earn 1 credit when it's complete</div>
+            </div>
+            <span class="status-badge status-requested">New request</span>
+        </div>
+        <div class="session-card-foot">
+            <form method="post" action="{% url 'accept_session' s.pk %}" class="action-inline">
+                {% csrf_token %}
+                <label class="field">
+                    <span class="field-label">Pick a time</span>
+                    <input type="datetime-local" name="scheduled_at" required>
+                </label>
+                <button class="btn-yellow" type="submit"><i class="fa-solid fa-check"></i> Accept</button>
+            </form>
+            <form method="post" action="{% url 'reject_session' s.pk %}">
+                {% csrf_token %}
+                <button class="btn-quiet" type="submit">Decline</button>
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <p class="session-empty">No new requests. Students who want to learn from you will appear here.</p>
+    {% endfor %}
+</section>
+
+<section class="session-group">
+    <h3 class="session-group-title"><i class="fa-solid fa-paper-plane"></i> Sent by you<span class="count">{{ sent|length }}</span></h3>
+    {% for s in sent %}
+    <div class="session-card">
+        <div class="session-card-top">
+            <div class="session-card-info">
+                <div class="session-card-title">{{ s.skill.name }}</div>
+                <div class="session-card-sub">Waiting for <strong>{{ s.teacher.get_full_name|default:s.teacher.username }}</strong> to accept</div>
+            </div>
+            <span class="status-badge status-pending">Pending</span>
+        </div>
+        <div class="session-card-foot">
+            <form method="post" action="{% url 'cancel_session' s.pk %}">
+                {% csrf_token %}
+                <button class="btn-quiet" type="submit">Withdraw request</button>
+            </form>
+        </div>
+    </div>
+    {% empty %}
+    <p class="session-empty">You haven't requested any sessions. <a href="{% url 'discover' %}">Find a teacher</a></p>
+    {% endfor %}
+</section>
+
+<section class="session-group">
+    <h3 class="session-group-title"><i class="fa-solid fa-clock-rotate-left"></i> Past sessions<span class="count">{{ history|length }}</span></h3>
     {% for s in history %}
     <div class="session-card">
         <div class="session-card-top">
             <div class="session-card-info">
                 <div class="session-card-title">{{ s.skill.name }}</div>
                 <div class="session-card-sub">
-                    with <strong>{% if s.learner == request.user %}{{ s.teacher.username }}{% else %}{{ s.learner.username }}{% endif %}</strong>
+                    {% if s.learner == request.user %}With <strong>{{ s.teacher.get_full_name|default:s.teacher.username }}</strong>{% else %}With <strong>{{ s.learner.get_full_name|default:s.learner.username }}</strong>{% endif %}
                 </div>
+                {% if s.completed_at %}<div class="session-card-meta"><i class="fa-regular fa-calendar"></i>{{ s.completed_at|date:"M j, Y" }}</div>{% endif %}
             </div>
             <span class="status-badge status-{{ s.status }}">{{ s.get_status_display }}</span>
         </div>
@@ -116,26 +117,27 @@
             <form method="post" action="{% url 'rate_session' s.pk %}" class="action-inline action-grow">
                 {% csrf_token %}
                 <label class="field">
-                    <span class="field-label">Your rating</span>
+                    <span class="field-label">Rate this session</span>
                     <select name="stars" required>
-                        <option value="">Rate…</option>
-                        <option value="5">★★★★★ · 5</option>
-                        <option value="4">★★★★ · 4</option>
-                        <option value="3">★★★ · 3</option>
-                        <option value="2">★★ · 2</option>
-                        <option value="1">★ · 1</option>
+                        <option value="">Choose</option>
+                        <option value="5">★★★★★ Excellent</option>
+                        <option value="4">★★★★ Good</option>
+                        <option value="3">★★★ Okay</option>
+                        <option value="2">★★ Poor</option>
+                        <option value="1">★ Bad</option>
                     </select>
                 </label>
                 <label class="field field-grow">
-                    <span class="field-label">Comment</span>
-                    <input type="text" name="comment" placeholder="Optional — a quick note for your peer">
+                    <span class="field-label">Comment (optional)</span>
+                    <input type="text" name="comment" placeholder="A quick note for your partner">
                 </label>
-                <button class="btn-yellow" type="submit"><i class="fa-solid fa-star"></i> Save rating</button>
+                <button class="btn-yellow" type="submit">Save rating</button>
             </form>
         </div>
         {% endif %}
 
         {% if s.status == "completed" %}
+        {% if s.notes or s.ai_summary or s.has_transcript %}
         <div class="session-card-body">
             {% if s.notes %}
             <div class="session-notes">
@@ -145,28 +147,31 @@
             {% endif %}
             {% if s.ai_summary %}
             <div class="ai-summary-card">
-                <div class="ai-summary-header"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Summary</div>
+                <div class="ai-summary-header"><i class="fa-solid fa-wand-magic-sparkles"></i> AI summary</div>
                 <div class="ai-summary-body">{{ s.ai_summary|markdownify }}</div>
                 {% if s.summary_generated_at %}<div class="ai-summary-meta">Generated {{ s.summary_generated_at|date:"M j, Y, g:i a" }}</div>{% endif %}
             </div>
-            {% elif s.has_transcript or s.notes %}
-            <form method="post" action="{% url 'generate_summary' s.pk %}">
-                {% csrf_token %}
-                <button class="btn-summary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI summary{% if s.has_transcript %} from transcript{% endif %}</button>
-            </form>
-            {% if s.has_transcript %}<div class="peer-meta" style="margin-top:0.35rem;"><i class="fa-solid fa-file-waveform"></i> Transcript ready — summary will use the transcript.</div>{% endif %}
+            {% else %}
+            <div class="summary-row">
+                <form method="post" action="{% url 'generate_summary' s.pk %}">
+                    {% csrf_token %}
+                    <button class="btn-summary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> {% if s.has_transcript %}Summarize transcript{% else %}Summarize notes{% endif %}</button>
+                </form>
+                {% if s.has_transcript %}<span class="transcript-ready"><i class="fa-solid fa-circle-check"></i> Transcript ready</span>{% endif %}
+            </div>
             {% endif %}
             {% if s.has_transcript %}
             <details class="transcript-view">
-                <summary><i class="fa-solid fa-file-lines"></i> View transcript <span class="transcript-meta">({{ s.transcript_text|length }} chars · {{ s.recording_status }})</span></summary>
+                <summary><i class="fa-solid fa-file-lines"></i> View transcript <span class="transcript-meta">{{ s.transcript_text|wordcount }} word{{ s.transcript_text|wordcount|pluralize }}</span></summary>
                 <div class="transcript-body">{{ s.transcript_text|linebreaksbr }}</div>
             </details>
             {% endif %}
         </div>
         {% endif %}
+        {% endif %}
     </div>
     {% empty %}
-    <p class="session-empty">No history yet.</p>
+    <p class="session-empty">Finished, declined, and cancelled sessions will be listed here.</p>
     {% endfor %}
 </section>
 {% endblock %}

@@ -119,7 +119,7 @@ class SessionSummaryTests(TestCase):
         self.assertIsNotNone(self.session.summary_generated_at)
         # appears on sessions page, not re-called on GET
         resp = self.client.get(reverse("sessions"))
-        self.assertContains(resp, "AI Summary")
+        self.assertContains(resp, "AI summary")
         self.assertContains(resp, "Topics Covered")
         self.assertEqual(mock_gen.call_count, 1)
         # second GET does not call helper again (stored)

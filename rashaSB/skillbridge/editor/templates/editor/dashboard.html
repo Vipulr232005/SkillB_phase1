@@ -5,56 +5,47 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<section class="figma-hero-container" id="peers">
-    <div class="teal-curved-shape">
-        <div class="shape-copy">
-            <h2>Peer Mentorship</h2>
-            <p>Learn together. Earn together.</p>
+<section class="arch-hero">
+    <div>
+        <h2>Hi {{ user.first_name|default:user.username }}, what will you learn this week?</h2>
+        <p>Teach what you know to earn credits, then spend them learning from other students.</p>
+        <div class="hero-actions">
+            <a class="btn-yellow btn-dark" href="{% url 'discover' %}"><i class="fa-solid fa-compass"></i> Find a teacher</a>
+            <button type="button" class="btn-ghost" data-skill-type="TEACH"><i class="fa-solid fa-chalkboard-user"></i> Offer a skill</button>
         </div>
     </div>
-    <div class="hero-peers">
-        <div class="hero-peers-head">
-            <h3>Available peer mentors</h3>
-            <a class="btn-ghost" href="{% url 'discover' %}">Browse all</a>
-        </div>
-        <div class="peer-cards-grid">
-            {% for skill in peer_skills %}
-            <article class="peer-card" data-peer-card data-search="{{ skill.name }} {{ skill.user.username }} {{ skill.category }}">
-                <div class="peer-avatar-wrap">
-                    <img src="{% static skill.user.profile.avatar_static_path %}" alt="{{ skill.user.username }}">
-                </div>
-                <h4>{{ skill.user.get_full_name|default:skill.user.username }}</h4>
-                <span class="peer-skill">{{ skill.name }}</span>
-                <div class="peer-meta">{{ skill.proficiency }} · ★ {{ skill.user.profile.stars_label }}</div>
-                <div class="peer-rate">{{ skill.user.profile.credits }} credits</div>
-                <div class="peer-actions">
-                    <a class="btn-ghost" href="{% url 'public_profile' skill.user.username %}">Profile</a>
-                    {% if skill.user.profile.allow_requests %}
-                    <button type="button" class="btn-yellow js-request" style="flex:1;justify-content:center;"
-                        data-skill-id="{{ skill.id }}"
-                        data-label="{{ skill.name }} with {{ skill.user.username }}">Connect</button>
-                    {% endif %}
-                </div>
-            </article>
-            {% empty %}
-            <p>No peer skills yet. Add one you can teach so others can find you.</p>
-            {% endfor %}
-        </div>
+    <div class="balance">
+        <span class="balance-num">{{ profile.credits }}</span>
+        <span class="balance-label">credit{{ profile.credits|pluralize }} to spend</span>
     </div>
 </section>
 
-<section class="stats-row">
-    <div class="stat-tile">
-        <span>{{ profile.credits }}</span>
-        <small>Credits</small>
+<div class="stat-strip">
+    <div><strong>{{ user_teach_count }}</strong><span>Skill{{ user_teach_count|pluralize }} you teach</span></div>
+    <div><strong>{{ user_learn_count }}</strong><span>Skill{{ user_learn_count|pluralize }} you're learning</span></div>
+    <div><strong>{{ profile.stars_label }}</strong><span>Your rating</span></div>
+</div>
+
+<section class="section" id="peers">
+    <div class="section-head">
+        <div>
+            <h2>Teachers for you</h2>
+            <p>Students offering skills right now.</p>
+        </div>
+        <a class="btn-ghost btn-sm" href="{% url 'discover' %}">See all</a>
     </div>
-    <div class="stat-tile">
-        <span>{{ user_teach_count }}</span>
-        <small>Skills you teach</small>
+    {% if peer_skills %}
+    <div class="mentor-grid">
+        {% for skill in peer_skills|slice:":6" %}
+        {% include "editor/_mentor_card.html" %}
+        {% endfor %}
     </div>
-    <div class="stat-tile">
-        <span>{{ user_learn_count }}</span>
-        <small>Skills you learn</small>
+    {% else %}
+    <div class="empty">
+        <strong>No teachers yet</strong>
+        Be the first. Add a skill you can teach so classmates can find you.
+        <div><button type="button" class="btn-yellow" data-skill-type="TEACH"><i class="fa-solid fa-plus"></i> Add a skill to teach</button></div>
     </div>
+    {% endif %}
 </section>
 {% endblock %}

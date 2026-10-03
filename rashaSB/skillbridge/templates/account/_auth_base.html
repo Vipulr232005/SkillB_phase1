@@ -1,0 +1,33 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Skill Bridge{% endblock %} | Skill Bridge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'editor/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'editor/extras.css' %}">
+    <link rel="stylesheet" href="{% static 'editor/ui.css' %}">
+</head>
+<body class="auth-shell">
+    <aside class="auth-side">
+        <a class="brand" href="/">
+            <div class="brand-icon" style="background:var(--ink);color:var(--butter);"><i class="fa-solid fa-code-compare"></i></div>
+            <span class="brand-name" style="color:var(--ink);">Skill<span style="color:var(--ink);opacity:.6;">Bridge</span></span>
+        </a>
+        <div class="auth-copy">
+            <h2>{% block side_heading %}Learn from each other.{% endblock %}</h2>
+            <p>{% block side_text %}Teach a session to earn a credit. Spend it learning something new.{% endblock %}</p>
+        </div>
+    </aside>
+    <main class="auth-main">
+        <div class="auth-card-y">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</body>
+</html>
