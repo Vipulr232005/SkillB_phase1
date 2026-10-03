@@ -115,6 +115,8 @@ class Session(models.Model):
     meet_url = models.URLField(blank=True, default="")
     credits = models.PositiveIntegerField(default=1)
     notes = models.TextField(blank=True, default="")
+    ai_summary = models.TextField(blank=True, default="")
+    summary_generated_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
 

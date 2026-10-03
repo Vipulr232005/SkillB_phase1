@@ -345,6 +345,33 @@ def rate_session_view(request, pk):
 
 
 @login_required
+@require_POST
+def generate_summary_view(request, pk):
+    session = _own_session(request, pk)
+    if not session:
+        messages.error(request, "That session is not yours.")
+        return redirect("sessions")
+    if session.status != "completed":
+        messages.error(request, "Only completed sessions can be summarized.")
+        return redirect("sessions")
+    if not (session.notes or "").strip():
+        messages.error(request, "Add notes before generating a summary.")
+        return redirect("sessions")
+    # Lazy import to keep module import safe if key missing
+    from .ai import generate_session_summary
+
+    summary = generate_session_summary(session)
+    if not summary:
+        messages.warning(request, "Summary could not be generated. Check GEMINI_API_KEY or try again.")
+        return redirect("sessions")
+    session.ai_summary = summary
+    session.summary_generated_at = timezone.now()
+    session.save(update_fields=["ai_summary", "summary_generated_at"])
+    messages.success(request, "Summary generated.")
+    return redirect("sessions")
+
+
+@login_required
 def credits_view(request):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
     ledger = CreditTransaction.objects.filter(user=request.user).select_related("session", "session__skill")

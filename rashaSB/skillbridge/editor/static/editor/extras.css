@@ -524,6 +524,7 @@
     min-width: 180px;
 }
 
+/* Legacy aliases kept for any other pages still using these */
 .session-row {
     background: #fff;
     border: 1px solid #fef08a;
@@ -565,5 +566,385 @@
 h3 {
     margin: 1.25rem 0 0.75rem;
     color: #713f12;
+}
+
+/* ==========================================================================
+   Sessions page — AI summary + themed form controls (butter tokens)
+   ========================================================================== */
+
+.ai-summary-header {
+    font-weight: 800;
+    color: var(--text-primary, #292524);
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.6rem;
+    letter-spacing: -0.01em;
+}
+
+.ai-summary-header i {
+    color: var(--gold, #d97706);
+}
+
+.ai-summary-body {
+    color: var(--text-primary, #292524);
+    font-size: 0.92rem;
+    line-height: 1.6;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.ai-summary-body h1,
+.ai-summary-body h2,
+.ai-summary-body h3,
+.ai-summary-body h4 {
+    color: var(--text-primary, #292524);
+    font-weight: 800;
+    margin: 0.9rem 0 0.4rem;
+    line-height: 1.3;
+}
+
+.ai-summary-body h1 { font-size: 1.15rem; }
+.ai-summary-body h2 { font-size: 1.05rem; }
+.ai-summary-body h3 { font-size: 0.98rem; margin: 0.85rem 0 0.35rem; color: #713f12; }
+.ai-summary-body h4 { font-size: 0.92rem; }
+
+.ai-summary-body h1:first-child,
+.ai-summary-body h2:first-child,
+.ai-summary-body h3:first-child,
+.ai-summary-body p:first-child { margin-top: 0; }
+
+.ai-summary-body p {
+    margin: 0.45rem 0;
+    color: var(--text-secondary, #57534e);
+}
+
+.ai-summary-body strong {
+    color: var(--text-primary, #292524);
+    font-weight: 800;
+}
+
+.ai-summary-body ul,
+.ai-summary-body ol {
+    margin: 0.4rem 0 0.6rem 1.25rem;
+    padding: 0;
+}
+
+.ai-summary-body li {
+    margin: 0.25rem 0;
+    color: var(--text-secondary, #57534e);
+}
+
+.ai-summary-body li::marker {
+    color: var(--gold, #d97706);
+}
+
+.ai-summary-body code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.85em;
+    background: #fef9c3;
+    border: 1px solid var(--border-color, #fef08a);
+    color: #713f12;
+    padding: 0.15em 0.38em;
+    border-radius: 6px;
+    word-break: break-word;
+}
+
+.ai-summary-body pre {
+    background: #1c1917;
+    color: #fde047;
+    border-radius: var(--radius-sm, 8px);
+    padding: 0.85rem 1rem;
+    overflow-x: auto;
+    margin: 0.6rem 0;
+    border: 1px solid #292524;
+}
+
+.ai-summary-body pre code {
+    background: transparent;
+    border: none;
+    color: inherit;
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+}
+
+.ai-summary-body a {
+    color: var(--gold, #d97706);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ai-summary-body hr {
+    border: none;
+    border-top: 1px solid var(--border-subtle, #e7e5e4);
+    margin: 0.9rem 0;
+}
+
+/* ==========================================================================
+   Sessions page — grouped cards, status badges, themed controls
+   ========================================================================== */
+
+.session-group {
+    margin-bottom: 2rem;
+}
+
+.session-group-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1rem;
+    margin: 0 0 0.9rem;
+    color: #713f12;
+}
+
+.session-group-title i {
+    color: var(--gold, #d97706);
+    font-size: 0.9em;
+}
+
+.session-empty {
+    color: var(--text-muted, #a8a29e);
+    font-size: 0.9rem;
+    padding: 0.25rem 0 0.5rem;
+    margin: 0;
+}
+
+/* Card */
+.session-card {
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-subtle, #e7e5e4);
+    border-radius: var(--radius-md, 14px);
+    box-shadow: var(--shadow-sm);
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.85rem;
+    transition: box-shadow var(--transition-fast, 0.15s ease), border-color var(--transition-fast, 0.15s ease);
+}
+
+.session-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-color, #fef08a);
+}
+
+.session-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.session-card-title {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--text-primary, #292524);
+    letter-spacing: -0.01em;
+}
+
+.session-card-sub {
+    font-size: 0.9rem;
+    color: var(--text-secondary, #57534e);
+    margin-top: 0.15rem;
+}
+
+.session-card-sub strong {
+    color: var(--text-primary, #292524);
+    font-weight: 700;
+}
+
+.session-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--text-muted, #a8a29e);
+    margin-top: 0.35rem;
+}
+
+/* Status badges */
+.status-badge {
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.status-requested,
+.status-pending { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+.status-accepted { background: #dcfce7; color: #166534; border-color: #86efac; }
+.status-completed { background: #e0f2fe; color: #075985; border-color: #7dd3fc; }
+.status-rejected,
+.status-cancelled { background: #f5f5f4; color: #78716c; border-color: #e7e5e4; }
+
+/* Footer action bar */
+.session-card-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border-subtle, #e7e5e4);
+}
+
+.action-inline {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.action-grow { flex: 1 1 auto; }
+
+/* Labeled field */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.field-grow { flex: 1 1 220px; }
+
+.field-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: uppercase;
+    color: var(--text-muted, #a8a29e);
+}
+
+/* Themed controls */
+.session-card input[type="text"],
+.session-card input[type="datetime-local"],
+.session-card input[type="date"],
+.session-card textarea,
+.session-card select {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-primary, #292524);
+    background: var(--page-bg, #fafaf9);
+    border: 1px solid var(--border-subtle, #e7e5e4);
+    border-radius: var(--radius-sm, 8px);
+    padding: 0.55rem 0.8rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    min-width: 0;
+    width: 100%;
+}
+
+.session-card input::placeholder,
+.session-card textarea::placeholder {
+    color: var(--text-muted, #a8a29e);
+}
+
+.session-card input:focus,
+.session-card textarea:focus,
+.session-card select:focus {
+    border-color: var(--primary-yellow, #eab308);
+    box-shadow: 0 0 0 4px var(--primary-yellow-light, #fef08a);
+    background: var(--card-bg, #fff);
+}
+
+/* Custom select caret — keeps native select accessible */
+.session-card select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2.2rem;
+    cursor: pointer;
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--text-secondary, #57534e) 50%),
+        linear-gradient(135deg, var(--text-secondary, #57534e) 50%, transparent 50%);
+    background-position:
+        calc(100% - 16px) calc(50% - 2px),
+        calc(100% - 11px) calc(50% - 2px);
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+}
+
+.session-card .btn-yellow,
+.session-card .btn-ghost {
+    white-space: nowrap;
+}
+
+/* Body: notes + summary */
+.session-card-body {
+    margin-top: 1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border-subtle, #e7e5e4);
+}
+
+.session-notes {
+    margin-bottom: 0.85rem;
+}
+
+.session-notes-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--text-muted, #a8a29e);
+}
+
+.session-notes p {
+    margin: 0.3rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--text-secondary, #57534e);
+}
+
+.btn-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: #fff;
+    color: #713f12;
+    border: 1px solid var(--border-color, #fde047);
+    font-weight: 700;
+    font-size: 0.88rem;
+    border-radius: 999px;
+    padding: 0.55rem 1.1rem;
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-summary:hover {
+    background: #fef9c3;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-summary i { color: var(--gold, #d97706); }
+
+/* AI summary card — distinct tinted panel with accent rail */
+.ai-summary-card {
+    position: relative;
+    background: linear-gradient(180deg, #fffdf5, #fffbeb);
+    border: 1px solid #fde68a;
+    border-left: 3px solid var(--gold, #d97706);
+    border-radius: var(--radius-md, 12px);
+    padding: 1rem 1.15rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.ai-summary-meta {
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed #fde68a;
+    font-size: 0.75rem;
+    color: var(--text-muted, #a8a29e);
+}
+
+@media (max-width: 640px) {
+    .session-card-top { flex-direction: column; gap: 0.5rem; }
+    .action-inline { width: 100%; }
+    .session-card .btn-yellow,
+    .session-card .btn-ghost,
+    .session-card .btn-summary { width: 100%; justify-content: center; }
 }
 

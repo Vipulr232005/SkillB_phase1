@@ -1,7 +1,7 @@
 # PROGRESS TRACKER - update this after every task completed
 
-Last updated: 2026-08-04
-Current phase: Phase 1 (MVP - Auth Flow & Home Dashboard)
+Last updated: 2026-10-03
+Current phase: Phase 4 started (AI Session Summary — PRD 6.7 done)
 
 ## Completed
 - Plain Home page with heading, short text, and interactive hamburger menu (`instructions/editor-doc.txt`)
@@ -30,12 +30,24 @@ Current phase: Phase 1 (MVP - Auth Flow & Home Dashboard)
   - Falls back to console backend if key missing
   - `.env.example` + `.gitignore` for local secrets
 
+## Completed (additions 2026-10-03)
+- Session Lifecycle & Credits (Phase 2): request/accept/reject/cancel/join/complete with atomic credit transfer + ledger (`Session`, `CreditTransaction`), Jitsi Meet links, history views
+- Ratings & Profile Privacy (Phase 3 parts): 1-5 star ratings, average rating recompute, public/private profile, discover filtering
+- AI Session Summary (PRD 6.7, Phase 4):
+  - `google-genai` dependency + `GEMINI_API_KEY` env (aistudio.google.com/apikey)
+  - `Session.ai_summary` + `summary_generated_at` fields + migration 0006
+  - `editor/ai.py` `generate_session_summary()` using gemini-2.5-flash, reads GEMINI_API_KEY via os.environ.get, returns "" on missing key/error (never raises)
+  - `generate_summary_view` POST-only, participant-only, gated to completed+notes, saves summary once (stored, not re-called on GET)
+  - Sessions history UI: Generate summary button + butter-themed summary card (`#fcfbf4`/`#e7e5e4`/`#0b2e2b`/`#d97706`)
+  - Tests: mocked generate_session_summary, verifies save/display, gating, fallback credit flow still works without key
+  - `.env.example` updated with GEMINI_API_KEY=
+
 ## In Progress
-- User Profile Page customization (`content/prd-doc.txt` Phase 1)
 - Confirm Resend delivery end-to-end (set `RESEND_API_KEY`, test `/accounts/password/reset/`)
+- Phase 4 remainder: AI Matching polish, chat/notifications (future)
 
 ## Next Up
-- Session Request Lifecycle & Credit Transactions (Phase 2)
+- Phase 4 Chat + Notifications (Django Channels), Phase 5 PG migration + deploy
 
 ## Notes / Issues
 - Dev server: `http://localhost:8000/`
