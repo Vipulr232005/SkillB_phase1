@@ -156,7 +156,12 @@
             </form>
             {% if s.has_transcript %}<div class="peer-meta" style="margin-top:0.35rem;"><i class="fa-solid fa-file-waveform"></i> Transcript ready — summary will use the transcript.</div>{% endif %}
             {% endif %}
-            {% if s.has_transcript %}<div class="peer-meta" style="margin-top:0.25rem;">Transcript length: {{ s.transcript_text|length }} chars · status: {{ s.recording_status }}</div>{% endif %}
+            {% if s.has_transcript %}
+            <details class="transcript-view">
+                <summary><i class="fa-solid fa-file-lines"></i> View transcript <span class="transcript-meta">({{ s.transcript_text|length }} chars · {{ s.recording_status }})</span></summary>
+                <div class="transcript-body">{{ s.transcript_text|linebreaksbr }}</div>
+            </details>
+            {% endif %}
         </div>
         {% endif %}
     </div>

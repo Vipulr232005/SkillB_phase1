@@ -932,6 +932,51 @@ h3 {
     box-shadow: var(--shadow-sm);
 }
 
+/* Collapsible transcript viewer */
+.transcript-view {
+    margin-top: 0.6rem;
+    border: 1px solid var(--border-subtle, #e7e5e4);
+    border-radius: var(--radius-sm, 8px);
+    background: var(--page-bg, #fafaf9);
+    overflow: hidden;
+}
+
+.transcript-view > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-secondary, #57534e);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    user-select: none;
+}
+
+.transcript-view > summary::-webkit-details-marker { display: none; }
+.transcript-view > summary i { color: var(--gold, #d97706); }
+.transcript-view[open] > summary { border-bottom: 1px solid var(--border-subtle, #e7e5e4); }
+
+.transcript-meta {
+    font-weight: 500;
+    color: var(--text-muted, #a8a29e);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.transcript-body {
+    padding: 0.7rem 0.85rem;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    color: var(--text-primary, #292524);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--card-bg, #fff);
+}
+
 .ai-summary-meta {
     margin-top: 0.75rem;
     padding-top: 0.6rem;
