@@ -1,0 +1,33 @@
+# Project-level compose for async tasks (Jitsi infra is separate: docker/jitsi/docker-compose.yml)
+# For local dev you may run Django + Celery on the host and only containerize Redis + Jitsi.
+# This file makes the "hostable" path explicit: redis + celery worker are dockerized.
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile  # optional — if you add a Dockerfile for Django; otherwise run celery on host
+    command: celery -A skillbridge_project worker -l info
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - STT_PROVIDER=${STT_PROVIDER:-gemini}
+      - DJANGO_SETTINGS_MODULE=skillbridge_project.settings
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    profiles: ["full"]  # only when you want app in compose; local dev: run celery on host
+
+volumes:
+  redis_data:
