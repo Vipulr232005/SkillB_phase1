@@ -8,6 +8,14 @@ db.sqlite3
 .env
 *.log
 
+# Jitsi / Docker
+/docker/jitsi/jitsi-cfg/
+/docker/jitsi/.env
+/media/
+session_audio/
+celerybeat-schedule
+
+
 # IDE / OS
 .idea/
 .vscode/

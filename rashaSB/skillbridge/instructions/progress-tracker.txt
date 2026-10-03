@@ -1,7 +1,7 @@
 # PROGRESS TRACKER - update this after every task completed
 
 Last updated: 2026-10-03
-Current phase: Phase 4 started (AI Session Summary — PRD 6.7 done)
+Current phase: Meet Transcription Plan — ALL PHASES A–F DONE (self-hosted Jitsi + AI transcript summary complete)
 
 ## Completed
 - Plain Home page with heading, short text, and interactive hamburger menu (`instructions/editor-doc.txt`)
@@ -42,12 +42,66 @@ Current phase: Phase 4 started (AI Session Summary — PRD 6.7 done)
   - Tests: mocked generate_session_summary, verifies save/display, gating, fallback credit flow still works without key
   - `.env.example` updated with GEMINI_API_KEY=
 
+## Meet Transcription Plan (instructions/meet-transcription-plan.md)
+### Phase A — Stand up self-hosted Jitsi (Docker) [DONE 2026-10-03]
+- Vendored `docker-jitsi-meet` under `docker/jitsi/` (git clone --depth 1), generated `.env` via `gen-passwords.sh`.
+- Config: CONFIG=C:/.../docker/jitsi/jitsi-cfg (abs), HTTP_PORT=8001 (avoid Django 8000), HTTPS_PORT=8443, PUBLIC_URL=https://localhost:8443, DOCKER_HOST_ADDRESS=127.0.0.1, JVB_ADVERTISE_IPS=127.0.0.1. 4 containers only: web/prosody/jicofo/jvb (no Jigasi/Jibri — verified via compose config).
+- Root `docker-compose.yml` added for redis + celery worker (hostable path; local dev may run Django+Celery on host + only Redis/Jitsi containerized).
+- `docker/jitsi/README.md` documents bring-up + LAN note (DOCKER_HOST_ADDRESS → host IP, HTTPS/cert requirement for mic).
+- Acceptance: `docker compose -f docker/jitsi/docker-compose.yml config` validates 4 services; Jitsi web UI at https://localhost:8443 (self-signed) → create room → two tabs → two-way AV (requires `docker compose up -d`; documented, not auto-run in CI).
+
+### Phase B — Embed Jitsi in Django app (own the room page) [DONE 2026-10-03]
+- `Session.room_name` added + `build_jitsi_url`/`generate_room_name` (config-driven via `JITSI_BASE_URL` from .env; no hardcoded hosts; default `https://meet.jit.si` for tests, local `http://localhost:8443` in .env.example).
+- `settings.py` adds `JITSI_BASE_URL/APP_ID/JWT_SECRET`, `STT_PROVIDER`, `GEMINI_API_KEY` reuse, `STORAGE_BACKEND`, `MEDIA_ROOT/URL`, S3 conditional via `django-storages`, `CELERY_*` (defaults avoid localhost literals; e.g. `redis://redis:6379/0`).
+- `accept_session_view` now generates `room_name` + `meet_url` via `build_jitsi_url`; `join_session_view` redirects to `room`; new `room_view` (participant-only, `accepted` only) renders `editor/room.html` loading `{{ jitsi_base_url }}/external_api.js` + `JitsiMeetExternalAPI(roomName)`; ensures `SessionRecording` row for consent.
+- `editor/room.html` embeds Jitsi iframe API, shows back-link to sessions on leave; `sessions.html` Join now points to `room`.
+- `skillbridge_project/urls.py` serves `MEDIA_URL` in DEBUG; `admin` shows `room_name` + `SessionRecording`.
+- Migration `0007_add_recording_and_room` (covers `room_name` + `SessionRecording` — one migration as required).
+- `requirements.txt` adds `celery, redis, django-storages, boto3` (installed).
+- Tests updated: `room_name` prefix, `meet_url==build_jitsi_url(room_name)`, `join` → `/room/`, room page contains `external_api.js`; all 7 tests still green.
+- Acceptance: both participants join via `/sessions/<id>/room/` (not raw JitsI UI), call works (Jitsi at `JITSI_BASE_URL`), leaving returns to sessions.
+
+### Phase C — Capture audio in-browser + upload [DONE 2026-10-03]
+- `SessionRecording` model (OneToOne session, FileField `session_audio/`, `transcript`, `status` idle/uploaded/processing/done/failed, `consent_learner/teacher`, `duration_seconds`, `error`, timestamps) — storage via Django storage API (local `MEDIA_ROOT` now → S3 later).
+- Room page consent gate (`room.html`): clear notice, checkbox + “Enter room” enables Jitsi + MediaRecorder; `consent_learner/teacher` persisted via `POST /sessions/<id>/consent/`; recording starts only after consent (no silent recording).
+- `MediaRecorder` captures local mic as `audio/webm` (fallback to `audio/webm;codecs=opus`); “Stop & upload” POSTs blob to `POST /sessions/<id>/upload-audio/` (CSRF, participant-only, consent-gated) → `SessionRecording.audio_file` + `duration_seconds` + `status=uploaded`; `MEDIA_ROOT/session_audio/` verified.
+- `upload_audio_view` saves via storage abstraction, handles duration, enqueues transcription (Celery) gracefully if broker unavailable (logged, status stays uploaded for management command).
+- Limitation documented in room template: per-browser local mic only; merged two-speaker transcript would need Jibri/Jigasi (out of scope).
+- Acceptance: after a call, `media/session_audio/<id>_*.webm` exists and `SessionRecording.status=="uploaded"` (verified via test client: consent → upload → file exists, without consent → 400).
+
+### Phase D — Transcription service (Whisper, async) [DONE 2026-10-03]
+- `editor/transcription.py`: provider interface `transcribe(audio_path)->str` selected by `STT_PROVIDER` (default `gemini`). `gemini` reuses `google-genai` + `GEMINI_API_KEY` (uploads audio via `client.files.upload` + `generate_content` with `gemini-2.5-flash`); `openai_whisper` wired-but-inert (reads `OPENAI_API_KEY`/`WHISPER_MODEL`, returns "" + log until key set); `local_whisper` stub. All return "" + log, never raise.
+- `skillbridge_project/celery.py` + `skillbridge_project/__init__.py` celery_app, `editor/tasks.py` `transcribe_recording(recording_id)` (processing → transcribe → done/failed + error), handles `audio_file.path` (local) vs S3 fallback, respects `CELERY_TASK_ALWAYS_EAGER` for no-broker local dev.
+- `editor/management/commands/transcribe_pending.py` (no-broker fallback, processes `uploaded`/`failed`).
+- `skillbridge_project/settings.py` `CELERY_BROKER_URL/RESULT_BACKEND` (defaults `redis://redis:6379/0`, no localhost literal in code; example shows `redis://localhost:6379/0`). Enqueue from `upload_audio_view` (eager vs delay, caught).
+- `docker-compose.yml` `redis` + `celery` worker services (hostable path; local dev may run `CELERY_TASK_ALWAYS_EAGER=true` without Redis).
+- `requirements.txt` adds `celery, redis, django-storages, boto3`.
+- Acceptance: mocked `transcribe` → `status=done` + `transcript` populated; forced empty → `status=failed` + `error` without crash (verified via `transcribe_recording` with `unittest.mock.patch`).
+
+### Phase E — Transcript → Gemini summary (reuse existing) [DONE 2026-10-03]
+- `editor/ai.py` `generate_session_summary` now prefers `session.recording.transcript` when present (trimmed, 8000 char cap), else falls back to `session.notes` (same prompt shape, same `ai_summary` field, same UI). Reads `GEMINI_API_KEY` from `settings` or env (config-driven). Returns "" + log on missing transcript/notes or API error, never raises.
+- `generate_summary_view` now allows `transcript` as source: checks `transcript` (via `session.recording`) OR `notes`; error only if both empty. Keeps existing button explicit — do NOT auto-generate.
+- `sessions_view` attaches `has_transcript`/`transcript_text`/`recording_status` to history items (prefetches `SessionRecording`); `sessions.html` shows existing `Generate AI summary` button when `has_transcript` OR `notes` (button label adds "from transcript" when transcript present, plus “Transcript ready”/length badge), and renders `ai_summary` via `markdownify` into already-styled summary card. Notes-only path unchanged.
+- Tests: `SummaryPrefersTranscriptTests` — mocked `google.genai.Client` verifies prompt uses transcript over notes and fallback to notes; `test_generate_summary_view_allows_transcript_without_notes` verifies view accepts transcript without notes; all 15 tests green.
+- Acceptance: completed session with transcript → `generate_summary` produces `ai_summary` via Gemini (mocked) rendered in summary card; notes-only still works.
+
+### Phase F — Deployability hardening + docs [DONE 2026-10-03]
+- Hardening: `grep -rn "localhost\\|127.0.0.1" --include="*.py" skillbridge_project/ editor/` → only comments (OAuth redirect examples) contain localhost; no string literals in app code; `JITSI_BASE_URL` default is `https://meet.jit.si` (not localhost) but all runtime values come from `.env` via `os.environ.get` (same pattern as OAuth/GEMINI). `CELERY_BROKER_URL` default is `redis://redis:6379/0` (service name, not localhost); `STT_PROVIDER` default `gemini`; `STORAGE_BACKEND` default `local`. Verified via `docker compose -f docker/jitsi/docker-compose.yml config` (4 services, no jigasi/jibri).
+- S3 seam: `settings.py` adds `MEDIA_ROOT/URL` + `STORAGES` conditional (`STORAGE_BACKEND=="s3"` → `storages.backends.s3boto3.S3Boto3Storage`, else `FileSystemStorage`); `SessionRecording.audio_file` uses default storage (local `media/session_audio/` → S3). Installed but inert until `STORAGE_BACKEND=s3` + AWS keys set.
+- JWT: `JITSI_APP_ID`/`JITSI_JWT_SECRET` read from env (optional, for future public Jitsi JWT auth); notes in `docker/jitsi/README.md` + `.env.example` (leave blank locally).
+- Docs: `.env.example` documents all new keys (JITSI_*, STT_PROVIDER, OPENAI_API_KEY, WHISPER_MODEL, STORAGE_BACKEND, AWS_*, CELERY_* with `CELERY_TASK_ALWAYS_EAGER` fallback), `requirements.txt` adds `celery, redis, django-storages, boto3`, `README.md` updated with Tech Stack (Jitsi/Celery/S3), How to Run (.env values), Features A–E, Directory Structure, Limitations + LAN/JWT notes, `docker/jitsi/README.md` with bring-up + `DOCKER_HOST_ADDRESS` note, `docker-compose.yml` (project root) for `redis`+`celery`.
+- One migration `0007_add_recording_and_room` verified (`makemigrations` no new changes, `migrate` OK); `git status` scope-fence: only `editor/` (models/views/urls/templates/ai/transcription/tasks/management, templatetags, migrations, static), `skillbridge_project/settings.py` (+ `celery.py`/`__init__.py`), `requirements.txt`, `.env.example`, `docker/` (jitsi + compose), `README.md`, `instructions/`.
+- Credit/rating logic untouched (verified `git diff` shows no changes to `complete_session`/`rate_session` credit handling except room_name addition); all 15 tests green (7 original + 8 new, all mocked, CI no keys/network).
+- Acceptance: fresh clone runs full flow locally with only `.env` filled; moving to real host is `.env` change only (JITSI_BASE_URL, STORAGE_BACKEND, CELERY_BROKER_URL, GEMINI_API_KEY).
+
 ## In Progress
 - Confirm Resend delivery end-to-end (set `RESEND_API_KEY`, test `/accounts/password/reset/`)
-- Phase 4 remainder: AI Matching polish, chat/notifications (future)
 
 ## Next Up
-- Phase 4 Chat + Notifications (Django Channels), Phase 5 PG migration + deploy
+- Future: AI Matching, realtime chat, PG migration
+
+## Current deployability note
+- Local demo: `JITSI_BASE_URL=https://localhost:8443` (self-signed), `STT_PROVIDER=gemini`, `GEMINI_API_KEY=...`, `STORAGE_BACKEND=local`, `CELERY_BROKER_URL=redis://localhost:6379/0` or `CELERY_TASK_ALWAYS_EAGER=true` (no Redis). For host: change `.env` to `JITSI_BASE_URL=https://meet.yourhost`, `DOCKER_HOST_ADDRESS`+`JVB_ADVERTISE_IPS` to host IP, `STORAGE_BACKEND=s3` + AWS keys, `CELERY_BROKER_URL` to hosted Redis, set `JITSI_JWT_SECRET` if enabling JWT.
 
 ## Notes / Issues
 - Dev server: `http://localhost:8000/`
