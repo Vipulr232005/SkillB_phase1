@@ -12,6 +12,7 @@
         <div class="chips" style="margin-top:8px;">
             <span class="chip star"><i class="fa-solid fa-star"></i>{{ skill.user.profile.stars_label }}</span>
             <span class="chip">{{ skill.proficiency }}</span>
+            {% if skill.reason %}<span class="chip reason"><i class="fa-solid fa-wand-magic-sparkles"></i>{{ skill.reason }}</span>{% endif %}
         </div>
     </div>
     <div class="mentor-actions">

@@ -638,6 +638,16 @@ h1, h2, h3, h4 {
 .chip i { font-size: 10px; }
 .chip.star { background: var(--butter-pale); color: var(--ink-soft); }
 .chip.star i { color: var(--butter-deep); }
+.chip.reason {
+    background: var(--butter-pale);
+    color: var(--ink-soft);
+    border: 1px solid var(--butter-line);
+    font-weight: 700;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chip.reason i { color: var(--butter-deep); font-size: 10px; }
 .mentor-actions { display: flex; gap: 8px; margin-top: auto; }
 .mentor-actions .btn-yellow { flex: 1; }
 

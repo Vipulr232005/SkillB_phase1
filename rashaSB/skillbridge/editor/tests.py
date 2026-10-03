@@ -331,3 +331,102 @@ class SummaryPrefersTranscriptTests(TestCase):
             self.assertTrue(mock_gen.called)
             self.session.refresh_from_db()
             self.assertEqual(self.session.ai_summary, "summary from transcript")
+
+
+class RecommendationTests(TestCase):
+    def setUp(self):
+        # Clean slate for recommendations
+        self.user = User.objects.create_user("rec_user", "rec@example.com", "pass12345")
+        self.user.profile.learn_skills = "Spanish"
+        self.user.profile.save()
+        # Also add a LEARN skill to test union
+        Skill.objects.create(user=self.user, name="Guitar", category="Music", skill_type="LEARN", proficiency="Beginner")
+
+    def _create_teacher(self, username, skill_name, category="Languages", proficiency="Intermediate", is_public=True, allow_requests=True, avg_rating=0, rating_count=0):
+        t = User.objects.create_user(username, f"{username}@example.com", "pass12345")
+        # Ensure profile exists and set visibility/rating
+        profile, _ = UserProfile.objects.get_or_create(user=t)
+        profile.is_public = is_public
+        profile.allow_requests = allow_requests
+        profile.average_rating = avg_rating
+        profile.rating_count = rating_count
+        profile.save()
+        skill = Skill.objects.create(user=t, name=skill_name, category=category, skill_type="TEACH", proficiency=proficiency)
+        return t, skill
+
+    def test_interest_ranking(self):
+        # Spanish teacher should outrank unrelated
+        t1, s1 = self._create_teacher("spanish_teacher", "Spanish Conversation", category="Languages", proficiency="Advanced", avg_rating=1, rating_count=0)
+        t2, s2 = self._create_teacher("unrelated_teacher", "Basketball Coaching", category="Music", proficiency="Beginner", avg_rating=0)
+        from editor.recommendations import recommend_teachers
+        recs = recommend_teachers(self.user, limit=6)
+        ids = [s.id for s in recs]
+        self.assertIn(s1.id, ids)
+        self.assertIn(s2.id, ids)
+        # Spanish should be before unrelated due to +10 interest
+        self.assertLess(ids.index(s1.id), ids.index(s2.id))
+
+    def test_each_has_reason(self):
+        self._create_teacher("t_a", "spanish basics", category="Languages")
+        self._create_teacher("t_b", "photography", category="Design", avg_rating=4.5, rating_count=10)
+        from editor.recommendations import recommend_teachers
+        recs = recommend_teachers(self.user, limit=6)
+        self.assertTrue(len(recs) > 0)
+        for s in recs:
+            self.assertTrue(hasattr(s, "reason"))
+            self.assertTrue(isinstance(s.reason, str) and s.reason.strip() != "")
+
+    def test_excludes_self_and_private_and_dedupes(self):
+        # Self skill should be excluded
+        Skill.objects.create(user=self.user, name="Spanish Conversation", category="Languages", skill_type="TEACH", proficiency="Advanced")
+        # Private profile excluded
+        self._create_teacher("private_teacher", "Spanish Private", category="Languages", is_public=False)
+        # Not allow_requests excluded
+        self._create_teacher("blocked_teacher", "Spanish Blocked", category="Languages", allow_requests=False)
+        # Two skills same teacher -> dedupe to one
+        t_multi, s_a = self._create_teacher("multi_teacher", "Spanish A", category="Languages")
+        s_b = Skill.objects.create(user=t_multi, name="Spanish B", category="Languages", skill_type="TEACH", proficiency="Advanced")
+        from editor.recommendations import recommend_teachers
+        recs = recommend_teachers(self.user, limit=10)
+        # No self
+        for s in recs:
+            self.assertNotEqual(s.user_id, self.user.id)
+        # private/blocked not in results
+        rec_ids = [s.id for s in recs]
+        # Ensure private teacher's skill not present (we didn't keep reference but check via query)
+        private_skills = Skill.objects.filter(user__username="private_teacher")
+        for ps in private_skills:
+            self.assertNotIn(ps.id, rec_ids)
+        # dedupe: multi_teacher appears once
+        counts = {}
+        for s in recs:
+            counts[s.user_id] = counts.get(s.user_id, 0) + 1
+        for uid, cnt in counts.items():
+            self.assertEqual(cnt, 1, f"teacher {uid} appears {cnt} times")
+        # specifically multi_teacher once
+        self.assertEqual(counts.get(t_multi.id, 0), 1)
+
+    def test_cold_start_returns_top_rated(self):
+        # Cold user: no learn_skills, no LEARN skills
+        cold = User.objects.create_user("cold_user", "cold@example.com", "pass12345")
+        cold.profile.learn_skills = ""
+        cold.profile.save()
+        # Ensure no LEARN skills for cold
+        Skill.objects.filter(user=cold, skill_type="LEARN").delete()
+        # Create teachers — use Skill rating to control _peer_skills ordering (cold fallback uses Skill.rating)
+        t1, s1 = self._create_teacher("top_teacher", "Python", category="Programming", avg_rating=4.9, rating_count=15)
+        t2, s2 = self._create_teacher("low_teacher", "Basketball", category="Music", avg_rating=1.0, rating_count=1)
+        s1.rating = 5.0
+        s1.save(update_fields=["rating"])
+        s2.rating = 1.0
+        s2.save(update_fields=["rating"])
+        from editor.recommendations import recommend_teachers
+        recs = recommend_teachers(cold, limit=6)
+        self.assertTrue(len(recs) > 0)
+        for s in recs:
+            self.assertTrue(hasattr(s, "reason"))
+            self.assertEqual(s.reason, "Top rated right now")
+        # Should be ordered by Skill.rating desc via _peer_skills
+        names = [s.name for s in recs]
+        if "Python" in names and "Basketball" in names:
+            self.assertLess(names.index("Python"), names.index("Basketball"))

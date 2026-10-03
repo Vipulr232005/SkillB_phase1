@@ -11,6 +11,8 @@ from django.views.decorators.http import require_POST
 
 from django.conf import settings
 
+from .recommendations import recommend_teachers
+
 from .models import (
     AVATAR_FILES,
     CreditTransaction,
@@ -50,11 +52,17 @@ def _peer_skills(user, query="", category=""):
 
 def _dash_context(request, open_edit=False):
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    try:
+        peer_skills = recommend_teachers(request.user, limit=6)
+    except Exception:
+        peer_skills = _peer_skills(request.user)[:6]
+        for s in peer_skills:
+            s.reason = "Top rated right now"
     return {
         "profile": profile,
         "user_teach_count": Skill.objects.filter(user=request.user, skill_type="TEACH").count(),
         "user_learn_count": Skill.objects.filter(user=request.user, skill_type="LEARN").count(),
-        "peer_skills": _peer_skills(request.user),
+        "peer_skills": peer_skills,
         "open_edit_profile": open_edit,
     }
 
