@@ -19,6 +19,15 @@ def _load_env_file(path: Path) -> None:
             continue
         key, _, value = line.partition("=")
         key = key.strip()
+        value = value.strip()
+        # Strip an inline comment only when the value is unquoted and the '#' is
+        # preceded by whitespace (dotenv convention), so URLs/secrets containing
+        # '#' are preserved but "VALUE  # note" does not leak the note.
+        if value[:1] not in ('"', "'"):
+            for i, ch in enumerate(value):
+                if ch == "#" and i > 0 and value[i - 1] in " \t":
+                    value = value[:i]
+                    break
         value = value.strip().strip('"').strip("'")
         os.environ.setdefault(key, value)
 
