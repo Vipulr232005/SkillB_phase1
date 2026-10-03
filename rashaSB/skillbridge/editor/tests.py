@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import CreditTransaction, Rating, Session, Skill, UserProfile, jitsi_url
+from .models import CreditTransaction, Rating, Session, Skill, UserProfile, build_jitsi_url, jitsi_url
 
 
 class SessionFlowTests(TestCase):
@@ -31,11 +31,18 @@ class SessionFlowTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         session.refresh_from_db()
         self.assertEqual(session.status, "accepted")
-        self.assertEqual(session.meet_url, jitsi_url(session.pk))
-
+        # room_name is now config-driven and unique per session
+        self.assertTrue(session.room_name.startswith("skillbridge-"))
+        self.assertEqual(session.meet_url, build_jitsi_url(session.room_name))
+        # new behavior: join redirects to embedded room page (config-driven, no hardcoded host)
         resp = self.client.get(reverse("join_session", args=[session.pk]))
         self.assertEqual(resp.status_code, 302)
-        self.assertIn("meet.jit.si", resp["Location"])
+        self.assertIn(f"/sessions/{session.pk}/room/", resp["Location"])
+        # room page itself loads external_api.js from JITSI_BASE_URL
+        resp = self.client.get(reverse("room", args=[session.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "external_api.js")
+        self.assertContains(resp, session.room_name)
 
         resp = self.client.post(reverse("complete_session", args=[session.pk]), {"notes": "Covered lists"})
         self.assertEqual(resp.status_code, 302)
@@ -167,3 +174,160 @@ class SessionSummaryTests(TestCase):
         self.assertEqual(s.status, "completed")
         self.assertEqual(UserProfile.objects.get(user=learner2).credits, 9)
         self.assertEqual(UserProfile.objects.get(user=teacher2).credits, 11)
+
+
+class RoomAndRecordingTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user("rteacher", "rt@example.com", "pass12345")
+        self.learner = User.objects.create_user("rlearner", "rl@example.com", "pass12345")
+        self.skill = Skill.objects.create(user=self.teacher, name="Piano", category="Music", skill_type="TEACH")
+        self.session = Session.objects.create(learner=self.learner, teacher=self.teacher, skill=self.skill, status="requested")
+        self.client.force_login(self.teacher)
+        self.client.post(reverse("accept_session", args=[self.session.pk]), {"scheduled_at": "2026-08-24T18:00"})
+        self.session.refresh_from_db()
+
+    def test_room_requires_accepted_and_participant(self):
+        outsider = User.objects.create_user("outsider2", "o2@example.com", "pass12345")
+        self.client.force_login(outsider)
+        resp = self.client.get(reverse("room", args=[self.session.pk]))
+        self.assertEqual(resp.status_code, 302)
+        # learner can access
+        self.client.force_login(self.learner)
+        resp = self.client.get(reverse("room", args=[self.session.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "external_api.js")
+        self.assertContains(resp, self.session.room_name)
+
+    def test_upload_consent_and_audio_gated(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from editor.models import SessionRecording
+        self.client.force_login(self.learner)
+        # without consent -> 400
+        audio = SimpleUploadedFile("a.webm", b"fake", content_type="audio/webm")
+        resp = self.client.post(reverse("upload_audio", args=[self.session.pk]), {"audio": audio})
+        self.assertEqual(resp.status_code, 400)
+        # set consent
+        resp = self.client.post(reverse("upload_consent", args=[self.session.pk]), {"consent": "true"})
+        self.assertEqual(resp.status_code, 200)
+        rec = SessionRecording.objects.get(session=self.session)
+        self.assertTrue(rec.consent_learner)
+        # now upload succeeds
+        audio2 = SimpleUploadedFile("b.webm", b"fake2", content_type="audio/webm")
+        with patch("editor.tasks.transcribe_recording") as mock_task:
+            # avoid needing Celery
+            resp = self.client.post(reverse("upload_audio", args=[self.session.pk]), {"audio": audio2, "duration_seconds": "12"})
+            self.assertEqual(resp.status_code, 200)
+            self.assertEqual(resp.json()["status"], "uploaded")
+        rec.refresh_from_db()
+        self.assertEqual(rec.status, "uploaded")
+        self.assertTrue(rec.audio_file.name.endswith(".webm"))
+        self.assertEqual(rec.duration_seconds, 12)
+        # participant-only
+        outsider = User.objects.create_user("outsider3", "o3@example.com", "pass12345")
+        self.client.force_login(outsider)
+        audio3 = SimpleUploadedFile("c.webm", b"x", content_type="audio/webm")
+        resp = self.client.post(reverse("upload_audio", args=[self.session.pk]), {"audio": audio3})
+        self.assertIn(resp.status_code, [302, 403])
+
+
+class TranscriptionTaskTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user("tt", "tt@example.com", "pass12345")
+        self.learner = User.objects.create_user("ll", "ll@example.com", "pass12345")
+        self.skill = Skill.objects.create(user=self.teacher, name="Drums", category="Music", skill_type="TEACH")
+        self.session = Session.objects.create(learner=self.learner, teacher=self.teacher, skill=self.skill, status="completed", room_name="skillbridge-test")
+        from editor.models import SessionRecording
+        from django.core.files.base import ContentFile
+        self.recording = SessionRecording.objects.create(session=self.session, status="uploaded", consent_learner=True)
+        self.recording.audio_file.save("dummy.webm", ContentFile(b"dummy audio"))
+        self.recording.save()
+
+    @patch("editor.tasks.transcribe")
+    def test_task_sets_done_on_transcript(self, mock_trans):
+        from editor.tasks import transcribe_recording
+        mock_trans.return_value = "hello transcript"
+        transcribe_recording(self.recording.id)
+        self.recording.refresh_from_db()
+        self.assertEqual(self.recording.status, "done")
+        self.assertEqual(self.recording.transcript, "hello transcript")
+        self.assertEqual(self.recording.error, "")
+
+    @patch("editor.tasks.transcribe")
+    def test_task_sets_failed_on_empty(self, mock_trans):
+        from editor.tasks import transcribe_recording
+        mock_trans.return_value = ""
+        transcribe_recording(self.recording.id)
+        self.recording.refresh_from_db()
+        self.assertEqual(self.recording.status, "failed")
+        self.assertIn("empty", self.recording.error.lower())
+
+    def test_transcription_interface_never_raises(self):
+        from editor.transcription import transcribe
+        # no key / missing file -> ""
+        result = transcribe("/nonexistent/path.webm")
+        self.assertEqual(result, "")
+
+
+class SummaryPrefersTranscriptTests(TestCase):
+    def setUp(self):
+        self.teacher = User.objects.create_user("st", "st2@example.com", "pass12345")
+        self.learner = User.objects.create_user("sl", "sl2@example.com", "pass12345")
+        self.skill = Skill.objects.create(user=self.teacher, name="Guitar2", category="Music", skill_type="TEACH")
+        self.session = Session.objects.create(learner=self.learner, teacher=self.teacher, skill=self.skill, status="completed", notes="notes fallback", room_name="skillbridge-x")
+        from editor.models import SessionRecording
+        self.recording = SessionRecording.objects.create(session=self.session, status="done", transcript="transcript hello", consent_learner=True)
+
+    @patch("google.genai.Client")
+    def test_prefers_transcript(self, mock_client):
+        # Mock Gemini client to capture prompt
+        mock_instance = mock_client.return_value
+        mock_resp = type("obj", (), {"text": "summary output", "candidates": []})()
+        mock_instance.models.generate_content.return_value = mock_resp
+        from editor.ai import generate_session_summary
+        # need GEMINI_API_KEY set for this test (ai now reads from settings)
+        from django.conf import settings
+        old = getattr(settings, "GEMINI_API_KEY", "")
+        settings.GEMINI_API_KEY = "fake-key-for-test"
+        try:
+            result = generate_session_summary(self.session)
+            self.assertEqual(result, "summary output")
+            # check prompt used transcript, not notes
+            call_kwargs = mock_instance.models.generate_content.call_args[1]
+            contents = call_kwargs.get("contents", "")
+            self.assertIn("transcript hello", str(contents))
+            self.assertNotIn("notes fallback", str(contents))
+        finally:
+            settings.GEMINI_API_KEY = old
+
+    @patch("google.genai.Client")
+    def test_fallback_to_notes_when_no_transcript(self, mock_client):
+        self.recording.transcript = ""
+        self.recording.save(update_fields=["transcript"])
+        mock_instance = mock_client.return_value
+        mock_resp = type("obj", (), {"text": "summary from notes", "candidates": []})()
+        mock_instance.models.generate_content.return_value = mock_resp
+        from editor.ai import generate_session_summary
+        from django.conf import settings
+        old = getattr(settings, "GEMINI_API_KEY", "")
+        settings.GEMINI_API_KEY = "fake-key-for-test"
+        try:
+            result = generate_session_summary(self.session)
+            self.assertEqual(result, "summary from notes")
+            call_kwargs = mock_instance.models.generate_content.call_args[1]
+            contents = call_kwargs.get("contents", "")
+            self.assertIn("notes fallback", str(contents))
+        finally:
+            settings.GEMINI_API_KEY = old
+
+    def test_generate_summary_view_allows_transcript_without_notes(self):
+        # notes empty but transcript exists -> should still generate
+        self.session.notes = ""
+        self.session.save(update_fields=["notes"])
+        self.client.force_login(self.learner)
+        with patch("editor.ai.generate_session_summary", return_value="summary from transcript") as mock_gen:
+            resp = self.client.post(reverse("generate_summary", args=[self.session.pk]))
+            self.assertEqual(resp.status_code, 302)
+            # ensure helper was called (transcript path)
+            self.assertTrue(mock_gen.called)
+            self.session.refresh_from_db()
+            self.assertEqual(self.session.ai_summary, "summary from transcript")

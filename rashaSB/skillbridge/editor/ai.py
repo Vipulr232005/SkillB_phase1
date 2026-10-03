@@ -11,21 +11,39 @@ def generate_session_summary(session) -> str:
     Uses Gemini 2.5 Flash via google-genai. Reads GEMINI_API_KEY from env.
     Returns "" and logs on missing key or any API error — never raises.
     """
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    # Config-driven: read from settings or env (same pattern as JITSI_BASE_URL/STT_PROVIDER)
+    from django.conf import settings as _settings
+    _raw = getattr(_settings, "GEMINI_API_KEY", None)
+    if _raw is None:
+        _raw = os.environ.get("GEMINI_API_KEY", "")
+    api_key = str(_raw or "").strip()
     if not api_key:
         logger.warning("GEMINI_API_KEY not set — skipping summary generation")
         return ""
 
     skill_name = getattr(getattr(session, "skill", None), "name", "") or "this skill"
+    # Prefer transcript when present, else fall back to notes (existing behavior)
+    transcript = ""
+    try:
+        rec = getattr(session, "recording", None)
+        if rec is not None:
+            # May be not prefetched — try to get transcript safely
+            transcript = (getattr(rec, "transcript", "") or "").strip()
+    except Exception:
+        transcript = ""
     notes = (getattr(session, "notes", "") or "").strip()
-    if not notes:
-        logger.warning("No notes for session %s — skipping summary", getattr(session, "pk", "?"))
+    source_text = transcript if transcript else notes
+    source_label = "Transcript" if transcript else "Session notes"
+    if not source_text:
+        logger.warning("No notes/transcript for session %s — skipping summary", getattr(session, "pk", "?"))
         return ""
-
+    # Truncate very long transcripts to keep prompt within token limits
+    if len(source_text) > 8000:
+        source_text = source_text[:8000] + "..."
     prompt = (
         f"You are an AI assistant helping students summarize a peer learning session.\n"
         f"Skill: {skill_name}\n"
-        f"Session notes: {notes}\n\n"
+        f"{source_label}: {source_text}\n\n"
         "Generate a concise, readable summary with exactly these sections:\n"
         "1. Topics Covered\n"
         "2. Key Concepts\n"

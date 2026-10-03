@@ -77,7 +77,7 @@
             <span class="status-badge status-accepted">Accepted</span>
         </div>
         <div class="session-card-foot">
-            <a class="btn-yellow" href="{% url 'join_session' s.pk %}" target="_blank" rel="noopener"><i class="fa-solid fa-video"></i> Join Jitsi</a>
+            <a class="btn-yellow" href="{% url 'room' s.pk %}"><i class="fa-solid fa-video"></i> Join room</a>
             <form method="post" action="{% url 'complete_session' s.pk %}" class="action-inline action-grow">
                 {% csrf_token %}
                 <label class="field field-grow">
@@ -149,12 +149,14 @@
                 <div class="ai-summary-body">{{ s.ai_summary|markdownify }}</div>
                 {% if s.summary_generated_at %}<div class="ai-summary-meta">Generated {{ s.summary_generated_at|date:"M j, Y, g:i a" }}</div>{% endif %}
             </div>
-            {% elif s.notes %}
+            {% elif s.has_transcript or s.notes %}
             <form method="post" action="{% url 'generate_summary' s.pk %}">
                 {% csrf_token %}
-                <button class="btn-summary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI summary</button>
+                <button class="btn-summary" type="submit"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate AI summary{% if s.has_transcript %} from transcript{% endif %}</button>
             </form>
+            {% if s.has_transcript %}<div class="peer-meta" style="margin-top:0.35rem;"><i class="fa-solid fa-file-waveform"></i> Transcript ready — summary will use the transcript.</div>{% endif %}
             {% endif %}
+            {% if s.has_transcript %}<div class="peer-meta" style="margin-top:0.25rem;">Transcript length: {{ s.transcript_text|length }} chars · status: {{ s.recording_status }}</div>{% endif %}
         </div>
         {% endif %}
     </div>
