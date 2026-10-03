@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CreditTransaction, Rating, Session, Skill, UserProfile
+from .models import CreditTransaction, Rating, Session, SessionRecording, Skill, UserProfile
 
 
 @admin.register(UserProfile)
@@ -17,9 +17,16 @@ class SkillAdmin(admin.ModelAdmin):
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
-    list_display = ("skill", "learner", "teacher", "status", "scheduled_at", "credits")
+    list_display = ("skill", "learner", "teacher", "status", "scheduled_at", "credits", "room_name")
     list_filter = ("status",)
-    search_fields = ("learner__username", "teacher__username", "skill__name")
+    search_fields = ("learner__username", "teacher__username", "skill__name", "room_name")
+
+
+@admin.register(SessionRecording)
+class SessionRecordingAdmin(admin.ModelAdmin):
+    list_display = ("session", "status", "duration_seconds", "consent_learner", "consent_teacher", "created_at")
+    list_filter = ("status",)
+    search_fields = ("session__skill__name",)
 
 
 @admin.register(CreditTransaction)

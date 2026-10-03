@@ -9,13 +9,18 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from django.conf import settings
+
 from .models import (
     AVATAR_FILES,
     CreditTransaction,
     Rating,
     Session,
+    SessionRecording,
     Skill,
     UserProfile,
+    build_jitsi_url,
+    generate_room_name,
     jitsi_url,
 )
 
@@ -201,6 +206,16 @@ def sessions_view(request):
         .select_related("learner", "teacher", "skill")
     )
     rated_ids = set(Rating.objects.filter(from_user=request.user).values_list("session_id", flat=True))
+    # Attach transcript availability to history items for template (avoid N+1, keep existing history queryset)
+    history = list(history)  # evaluate once
+    if history:
+        from .models import SessionRecording
+        recs = {r.session_id: r for r in SessionRecording.objects.filter(session_id__in=[s.id for s in history])}
+        for s in history:
+            r = recs.get(s.id)
+            s.has_transcript = bool(r and (r.transcript or "").strip())
+            s.transcript_text = (r.transcript if r else "")
+            s.recording_status = (r.status if r else "")
     return render(
         request,
         "editor/sessions.html",
@@ -228,9 +243,10 @@ def accept_session_view(request, pk):
     else:
         session.scheduled_at = timezone.now()
     session.status = "accepted"
-    session.save()
-    session.meet_url = jitsi_url(session.pk)
-    session.save(update_fields=["meet_url"])
+    if not session.room_name:
+        session.room_name = generate_room_name(session.pk)
+    session.meet_url = build_jitsi_url(session.room_name)
+    session.save(update_fields=["scheduled_at", "status", "room_name", "meet_url"])
     messages.success(request, "Session accepted. Jitsi room is ready.")
     return redirect("sessions")
 
@@ -263,11 +279,118 @@ def cancel_session_view(request, pk):
 
 @login_required
 def join_session_view(request, pk):
+    # Legacy direct join — now redirects to embedded room page
     session = _own_session(request, pk)
-    if not session or session.status != "accepted" or not session.meet_url:
+    if not session or session.status != "accepted":
         messages.error(request, "This session is not ready to join.")
         return redirect("sessions")
-    return redirect(session.meet_url)
+    if not session.room_name:
+        session.room_name = generate_room_name(session.pk)
+        session.meet_url = build_jitsi_url(session.room_name)
+        session.save(update_fields=["room_name", "meet_url"])
+    return redirect("room", pk=session.pk)
+
+
+@login_required
+def room_view(request, pk):
+    session = _own_session(request, pk)
+    if not session:
+        messages.error(request, "That session is not yours.")
+        return redirect("sessions")
+    if session.status != "accepted":
+        messages.error(request, "This room is only available for accepted sessions.")
+        return redirect("sessions")
+    if not session.room_name:
+        session.room_name = generate_room_name(session.pk)
+        session.meet_url = build_jitsi_url(session.room_name)
+        session.save(update_fields=["room_name", "meet_url"])
+    # Ensure a recording row exists for consent tracking
+    recording, _ = SessionRecording.objects.get_or_create(session=session)
+    jitsi_base = getattr(settings, "JITSI_BASE_URL", "https://meet.jit.si").rstrip("/")
+    return render(
+        request,
+        "editor/room.html",
+        {
+            "session": session,
+            "recording": recording,
+            "jitsi_base_url": jitsi_base,
+            "room_name": session.room_name,
+        },
+    )
+
+
+@login_required
+@require_POST
+def upload_consent_view(request, pk):
+    session = _own_session(request, pk)
+    if not session:
+        return redirect("sessions")
+    recording, _ = SessionRecording.objects.get_or_create(session=session)
+    is_learner = request.user.id == session.learner_id
+    is_teacher = request.user.id == session.teacher_id
+    consent = request.POST.get("consent") == "true"
+    if is_learner:
+        recording.consent_learner = consent
+    if is_teacher:
+        recording.consent_teacher = consent
+    recording.save(update_fields=["consent_learner", "consent_teacher"])
+    # For fetch() call from room.html expect JSON
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or "application/json" in request.headers.get("Accept", ""):
+        from django.http import JsonResponse
+        return JsonResponse({"ok": True, "consent_learner": recording.consent_learner, "consent_teacher": recording.consent_teacher})
+    from django.http import JsonResponse
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_POST
+def upload_audio_view(request, pk):
+    session = _own_session(request, pk)
+    if not session:
+        from django.http import JsonResponse
+        return JsonResponse({"ok": False, "error": "not your session"}, status=403)
+    if session.status != "accepted" and session.status != "completed":
+        from django.http import JsonResponse
+        return JsonResponse({"ok": False, "error": "session not in recordable state"}, status=400)
+    recording, _ = SessionRecording.objects.get_or_create(session=session)
+    # Consent is mandatory — at least the uploader must have consented
+    is_learner = request.user.id == session.learner_id
+    is_teacher = request.user.id == session.teacher_id
+    has_consent = (is_learner and recording.consent_learner) or (is_teacher and recording.consent_teacher)
+    if not has_consent:
+        from django.http import JsonResponse
+        return JsonResponse({"ok": False, "error": "consent required before recording"}, status=400)
+    audio = request.FILES.get("audio")
+    if not audio:
+        from django.http import JsonResponse
+        return JsonResponse({"ok": False, "error": "no audio file"}, status=400)
+    # Save via storage abstraction (local MEDIA_ROOT now, S3 later)
+    recording.audio_file.save(f"{session.pk}_{audio.name}", audio, save=False)
+    try:
+        duration = request.POST.get("duration_seconds")
+        if duration:
+            recording.duration_seconds = int(float(duration))
+    except Exception:
+        pass
+    recording.status = "uploaded"
+    recording.error = ""
+    recording.save()
+    # Try to enqueue transcription task (Celery) — fall back to eager if broker not available
+    try:
+        from .tasks import transcribe_recording
+        # Use delay if Celery is configured; if broker unavailable, it will be caught
+        # Check for eager mode to run synchronously
+        from django.conf import settings as _s
+        if getattr(_s, "CELERY_TASK_ALWAYS_EAGER", False):
+            transcribe_recording(recording.id)
+        else:
+            transcribe_recording.delay(recording.id)
+    except Exception as exc:
+        # Do not fail the upload if Celery is not running — transcript can be done via management command
+        import logging
+        logging.getLogger(__name__).warning("transcribe enqueue failed for %s: %s", recording.id, exc)
+    from django.http import JsonResponse
+    return JsonResponse({"ok": True, "status": recording.status, "audio_url": recording.audio_file.url if recording.audio_file else ""})
 
 
 @login_required
@@ -354,8 +477,16 @@ def generate_summary_view(request, pk):
     if session.status != "completed":
         messages.error(request, "Only completed sessions can be summarized.")
         return redirect("sessions")
-    if not (session.notes or "").strip():
-        messages.error(request, "Add notes before generating a summary.")
+    # Allow transcript as source (Phase E) — notes-only path still works
+    transcript = ""
+    try:
+        rec = session.recording
+        transcript = (getattr(rec, "transcript", "") or "").strip()
+    except Exception:
+        transcript = ""
+    notes = (session.notes or "").strip()
+    if not transcript and not notes:
+        messages.error(request, "Add notes or a transcript before generating a summary.")
         return redirect("sessions")
     # Lazy import to keep module import safe if key missing
     from .ai import generate_session_summary

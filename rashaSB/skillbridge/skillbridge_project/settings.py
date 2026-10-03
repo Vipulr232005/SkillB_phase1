@@ -172,6 +172,58 @@ _google_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
 _github_id = os.environ.get("GITHUB_CLIENT_ID", "").strip()
 _github_secret = os.environ.get("GITHUB_CLIENT_SECRET", "").strip()
 
+# --- Jitsi (self-hosted) — config-driven, no hardcoded hosts ---
+# Move from local Docker to a real host by changing .env only.
+JITSI_BASE_URL = os.environ.get("JITSI_BASE_URL", "https://meet.jit.si").rstrip("/")
+JITSI_APP_ID = os.environ.get("JITSI_APP_ID", "skillbridge").strip()
+JITSI_JWT_SECRET = os.environ.get("JITSI_JWT_SECRET", "").strip()
+
+# --- Transcription ---
+STT_PROVIDER = os.environ.get("STT_PROVIDER", "gemini").strip().lower() or "gemini"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "").strip()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "whisper-1").strip() or "whisper-1"
+
+# --- Storage ---
+STORAGE_BACKEND = os.environ.get("STORAGE_BACKEND", "local").strip().lower() or "local"
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID", "").strip()
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "").strip()
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME", "").strip()
+AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "").strip()
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Conditionally wire S3 when STORAGE_BACKEND=s3 (swap point: local -> S3)
+if STORAGE_BACKEND == "s3":
+    INSTALLED_APPS += ["storages"]
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = False
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
+
+# --- Celery (async transcription) ---
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0").strip()
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", CELERY_BROKER_URL).strip()
+CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "").strip().lower() in ("1", "true", "yes")
+CELERY_TASK_EAGER_PROPAGATES = True
+
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "SCOPE": ["profile", "email"],

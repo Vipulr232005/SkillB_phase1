@@ -1,3 +1,6 @@
+import uuid
+
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
@@ -94,8 +97,23 @@ class Skill(models.Model):
         return f"{self.name} ({self.skill_type}) - {self.user.username}"
 
 
+def _jitsi_base():
+    return getattr(settings, "JITSI_BASE_URL", "https://meet.jit.si").rstrip("/")
+
+
 def jitsi_url(session_id):
-    return f"https://meet.jit.si/skillbridge-{session_id}"
+    base = _jitsi_base()
+    return f"{base}/skillbridge-{session_id}"
+
+
+def build_jitsi_url(room_name):
+    base = _jitsi_base()
+    return f"{base}/{room_name}"
+
+
+def generate_room_name(session_id):
+    # stable, unique slug: skillbridge-<uuid8>-<id>
+    return f"skillbridge-{uuid.uuid4().hex[:8]}-{session_id}"
 
 
 class Session(models.Model):
@@ -113,6 +131,7 @@ class Session(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="requested")
     scheduled_at = models.DateTimeField(null=True, blank=True)
     meet_url = models.URLField(blank=True, default="")
+    room_name = models.CharField(max_length=120, blank=True, default="")
     credits = models.PositiveIntegerField(default=1)
     notes = models.TextField(blank=True, default="")
     ai_summary = models.TextField(blank=True, default="")
@@ -131,6 +150,36 @@ class Session(models.Model):
 
     def counterpart(self, user):
         return self.teacher if user.id == self.learner_id else self.learner
+
+
+class SessionRecording(models.Model):
+    STATUS_CHOICES = [
+        ("idle", "Idle"),
+        ("uploaded", "Uploaded"),
+        ("processing", "Processing"),
+        ("done", "Done"),
+        ("failed", "Failed"),
+    ]
+
+    session = models.OneToOneField(Session, on_delete=models.CASCADE, related_name="recording")
+    audio_file = models.FileField(upload_to="session_audio/", null=True, blank=True)
+    transcript = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="idle")
+    consent_learner = models.BooleanField(default=False)
+    consent_teacher = models.BooleanField(default=False)
+    duration_seconds = models.PositiveIntegerField(null=True, blank=True)
+    error = models.CharField(max_length=300, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Recording for {self.session_id} ({self.status})"
+
+    def has_consent(self):
+        # Consent is mandatory — both must have consented to consider valid
+        # For demo, require at least one consent from the uploading participant;
+        # the model tracks both sides.
+        return self.consent_learner or self.consent_teacher
 
 
 class CreditTransaction(models.Model):

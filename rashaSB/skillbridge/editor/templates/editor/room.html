@@ -1,0 +1,209 @@
+{% extends "editor/base_app.html" %}
+{% load static %}
+
+{% block title %}Room — {{ session.skill.name }} | Skill Bridge{% endblock %}
+{% block page_title %}Session room{% endblock %}
+
+{% block content %}
+<div class="room-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
+    <div>
+        <h3 style="margin:0;"><i class="fa-solid fa-video"></i> {{ session.skill.name }} with {% if session.learner == request.user %}{{ session.teacher.username }}{% else %}{{ session.learner.username }}{% endif %}</h3>
+        <div class="peer-meta">Room: <code>{{ room_name }}</code> · <a href="{{ session.meet_url }}" target="_blank" rel="noopener" style="color:var(--gold);">{{ session.meet_url }}</a></div>
+    </div>
+    <a href="{% url 'sessions' %}" class="btn-ghost"><i class="fa-solid fa-arrow-left"></i> Back to sessions</a>
+</div>
+
+<div id="consentGate" class="ai-summary-card" style="margin-bottom:1rem;border-left-color:var(--primary-yellow);">
+    <div class="ai-summary-header"><i class="fa-solid fa-shield-halved" style="color:var(--gold);"></i> Recording consent</div>
+    <p style="color:var(--text-secondary);font-size:0.92rem;margin:0.5rem 0 0.75rem;">This session will be recorded for an AI summary. Your microphone audio will be captured locally in your browser and uploaded as <code>audio/webm</code> when you end the call. Recording starts only after you consent.</p>
+    <p style="color:var(--text-secondary);font-size:0.85rem;margin:0 0 0.75rem;"><strong>Limitation:</strong> each browser records only its own mic (no merged two-speaker track). A true mixed transcript would need server-side mixing (Jibri) — out of scope for this demo.</p>
+    <label style="display:flex;align-items:center;gap:0.5rem;font-weight:700;font-size:0.9rem;margin-bottom:0.75rem;">
+        <input type="checkbox" id="consentCheck"> I consent to recording my audio for transcription & summary
+    </label>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button type="button" id="enterRoomBtn" class="btn-yellow" disabled><i class="fa-solid fa-right-to-bracket"></i> Enter room</button>
+        <button type="button" id="noConsentBtn" class="btn-ghost" onclick="document.getElementById('consentGate').style.display='none';document.getElementById('jitsi-container').style.display='block';initJitsi();">Join without recording</button>
+    </div>
+    <div id="consentStatus" class="peer-meta" style="margin-top:0.5rem;"></div>
+</div>
+
+<div id="jitsi-container" style="width:100%;height:600px;background:#1c1917;border-radius:var(--radius-md);border:1px solid var(--border-subtle);display:none;overflow:hidden;"></div>
+
+<div id="roomControls" style="display:none;margin-top:1rem;display:none;flex-wrap:wrap;gap:0.5rem;align-items:center;">
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <button type="button" id="startRecBtn" class="btn-yellow" disabled><i class="fa-solid fa-circle-dot"></i> Start recording</button>
+        <button type="button" id="stopRecBtn" class="btn-ghost" disabled><i class="fa-solid fa-stop"></i> Stop & upload</button>
+        <span id="recIndicator" style="display:none;align-items:center;gap:0.4rem;color:#dc2626;font-weight:700;font-size:0.85rem;"><span style="width:10px;height:10px;background:#dc2626;border-radius:50%;display:inline-block;animation:pulse 1.2s infinite;"></span> Recording… <span id="recTimer">0:00</span></span>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:0.5rem;">
+        <a href="{% url 'sessions' %}" class="btn-ghost">Leave room</a>
+        <button type="button" id="endAndSummarizeBtn" class="btn-yellow" disabled><i class="fa-solid fa-flag-checkered"></i> End &amp; upload</button>
+    </div>
+    <div id="uploadStatus" class="peer-meta" style="width:100%;margin-top:0.4rem;"></div>
+</div>
+
+<div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <form method="post" action="{% url 'complete_session' session.pk %}" style="display:inline-flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+        {% csrf_token %}
+        <input type="text" name="notes" placeholder="Session notes (used if no transcript yet)" style="min-width:220px;">
+        <button class="btn-yellow" type="submit"><i class="fa-solid fa-flag-checkered"></i> Mark complete</button>
+    </form>
+</div>
+
+<script src="{{ jitsi_base_url }}/external_api.js"></script>
+<script>
+(function(){
+    let api = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recStart = null;
+    let timerInt = null;
+    let hasConsented = false;
+    const consentCheck = document.getElementById('consentCheck');
+    const enterBtn = document.getElementById('enterRoomBtn');
+    const jitsiContainer = document.getElementById('jitsi-container');
+    const roomControls = document.getElementById('roomControls');
+    const startBtn = document.getElementById('startRecBtn');
+    const stopBtn = document.getElementById('stopRecBtn');
+    const endBtn = document.getElementById('endAndSummarizeBtn');
+    const recIndicator = document.getElementById('recIndicator');
+    const recTimer = document.getElementById('recTimer');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const consentStatus = document.getElementById('consentStatus');
+
+    consentCheck.addEventListener('change', () => {
+        enterBtn.disabled = !consentCheck.checked;
+    });
+    enterBtn.addEventListener('click', async () => {
+        hasConsented = true;
+        document.getElementById('consentGate').style.display = 'none';
+        jitsiContainer.style.display = 'block';
+        roomControls.style.display = 'flex';
+        consentStatus.textContent = '';
+        // persist consent
+        try {
+            await fetch("{% url 'upload_consent' session.pk %}", {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'consent=true'
+            });
+        } catch(e) {}
+        initJitsi();
+        // try to init recorder after consent
+        initRecorder();
+    });
+
+    window.initJitsi = function(){
+        if(api) return;
+        const base = "{{ jitsi_base_url|escapejs }}";
+        const domain = base.replace(/^https?:\/\//, '');
+        const options = {
+            roomName: "{{ room_name|escapejs }}",
+            parentNode: jitsiContainer,
+            width: '100%',
+            height: 600,
+            userInfo: { displayName: "{{ request.user.get_full_name|default:request.user.username|escapejs }}" },
+            configOverwrite: { startWithAudioMuted: false, startWithVideoMuted: false },
+        };
+        try {
+            api = new JitsiMeetExternalAPI(domain, options);
+            api.addEventListener('videoConferenceLeft', () => {
+                window.location.href = "{% url 'sessions' %}";
+            });
+            if(hasConsented) {
+                startBtn.disabled = false;
+                endBtn.disabled = false;
+            }
+        } catch(e) {
+            jitsiContainer.innerHTML = '<div style="padding:2rem;color:#fff;">Jitsi failed to load. <a href="{{ session.meet_url }}" target=\"_blank\" style=\"color:#fde047;\">Open directly</a> — check that {{ jitsi_base_url }} is reachable and the cert is trusted.</div>';
+            console.error(e);
+        }
+    };
+
+    async function initRecorder(){
+        if(!hasConsented) return;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+            const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : 'audio/webm';
+            mediaRecorder = new MediaRecorder(stream, {mimeType: mime});
+            mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = () => { uploadRecording(); };
+            startBtn.disabled = false;
+            consentStatus.textContent = 'Microphone ready.';
+        } catch(e) {
+            consentStatus.textContent = 'Mic access denied: ' + e.message;
+            startBtn.disabled = true;
+        }
+    }
+
+    function formatTime(ms){
+        const s = Math.floor(ms/1000);
+        return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+    }
+
+    startBtn.addEventListener('click', () => {
+        if(!mediaRecorder) return;
+        recordedChunks = [];
+        recStart = Date.now();
+        mediaRecorder.start(1000);
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        recIndicator.style.display = 'inline-flex';
+        timerInt = setInterval(()=>{ recTimer.textContent = formatTime(Date.now()-recStart); }, 500);
+        uploadStatus.textContent = '';
+    });
+    stopBtn.addEventListener('click', () => {
+        if(mediaRecorder && mediaRecorder.state==='recording'){
+            mediaRecorder.stop();
+            clearInterval(timerInt);
+            recIndicator.style.display='none';
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+        }
+    });
+    endBtn.addEventListener('click', () => {
+        if(mediaRecorder && mediaRecorder.state==='recording'){
+            mediaRecorder.stop();
+            clearInterval(timerInt);
+            recIndicator.style.display='none';
+        } else if(recordedChunks.length){
+            uploadRecording();
+        } else {
+            uploadStatus.textContent = 'No audio recorded yet — upload requires at least a few seconds.';
+        }
+    });
+
+    async function uploadRecording(){
+        if(!recordedChunks.length){
+            uploadStatus.textContent = 'No audio to upload.';
+            return;
+        }
+        const duration = recStart ? Math.round((Date.now()-recStart)/1000) : null;
+        const blob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || 'audio/webm'});
+        const form = new FormData();
+        form.append('audio', blob, 'recording.webm');
+        if(duration) form.append('duration_seconds', String(duration));
+        uploadStatus.textContent = 'Uploading ' + (blob.size/1024).toFixed(1) + ' KB…';
+        try {
+            const resp = await fetch("{% url 'upload_audio' session.pk %}", {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+                body: form
+            });
+            const data = await resp.json().catch(()=>({}));
+            if(resp.ok && data.ok){
+                uploadStatus.textContent = 'Upload done — status: ' + (data.status||'uploaded') + '. Transcript will appear after processing.';
+                recordedChunks = [];
+            } else {
+                uploadStatus.textContent = 'Upload failed: ' + (data.error || resp.statusText);
+            }
+        } catch(e){
+            uploadStatus.textContent = 'Upload error: ' + e.message;
+        }
+    }
+})();
+</script>
+<style>
+@keyframes pulse{0%{opacity:1}50%{opacity:0.4}100%{opacity:1}}
+</style>
+{% endblock %}
