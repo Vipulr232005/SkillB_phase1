@@ -350,6 +350,43 @@ def upload_consent_view(request, pk):
     return JsonResponse({"ok": True})
 
 
+def _start_transcription_async(recording_id):
+    """Kick off transcription without blocking the HTTP request.
+
+    Transcription makes a multi-second network call to the STT provider (Gemini).
+    Doing that inline inside the upload request (as CELERY_TASK_ALWAYS_EAGER did)
+    holds the request open and starves the live WebRTC call running on the same
+    machine, which drops the Jitsi connection ("something went wrong, reconnecting").
+
+    We run it in a background daemon thread so the upload returns immediately. This
+    works whether or not a Celery broker (redis) is available. The task reference is
+    captured now so unit tests that patch ``editor.tasks.transcribe_recording`` still
+    see their mock, and no real transcription runs in tests.
+    """
+    import logging
+    import threading
+
+    from django.db import connection
+
+    logger = logging.getLogger(__name__)
+    try:
+        from .tasks import transcribe_recording  # captured for the closure below
+    except Exception as exc:  # noqa: BLE001 — never fail the upload
+        logger.warning("could not import transcription task for %s: %s", recording_id, exc)
+        return
+
+    def _run():
+        try:
+            transcribe_recording(recording_id)
+        except Exception as exc:  # noqa: BLE001 — must never crash the thread
+            logger.warning("async transcription failed for %s: %s", recording_id, exc)
+        finally:
+            # Release this thread's DB connection so SQLite doesn't hold a lock.
+            connection.close()
+
+    threading.Thread(target=_run, name=f"transcribe-{recording_id}", daemon=True).start()
+
+
 @login_required
 @require_POST
 def upload_audio_view(request, pk):
@@ -383,20 +420,9 @@ def upload_audio_view(request, pk):
     recording.status = "uploaded"
     recording.error = ""
     recording.save()
-    # Try to enqueue transcription task (Celery) — fall back to eager if broker not available
-    try:
-        from .tasks import transcribe_recording
-        # Use delay if Celery is configured; if broker unavailable, it will be caught
-        # Check for eager mode to run synchronously
-        from django.conf import settings as _s
-        if getattr(_s, "CELERY_TASK_ALWAYS_EAGER", False):
-            transcribe_recording(recording.id)
-        else:
-            transcribe_recording.delay(recording.id)
-    except Exception as exc:
-        # Do not fail the upload if Celery is not running — transcript can be done via management command
-        import logging
-        logging.getLogger(__name__).warning("transcribe enqueue failed for %s: %s", recording.id, exc)
+    # Start transcription off the request thread so the upload returns immediately
+    # and never blocks the live video call. See _start_transcription_async above.
+    _start_transcription_async(recording.id)
     from django.http import JsonResponse
     return JsonResponse({"ok": True, "status": recording.status, "audio_url": recording.audio_file.url if recording.audio_file else ""})
 
